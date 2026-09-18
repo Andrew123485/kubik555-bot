@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кубик Судьбы — Оракул решений</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111726;
+      --bg-card: rgba(18, 26, 42, 0.88);
+      --bg-card-hover: rgba(26, 36, 58, 0.95);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-yes: #10b981;
+      --accent-yes-glow: rgba(16, 185, 129, 0.4);
+      --accent-no: #f43f5e;
+      --accent-no-glow: rgba(244, 63, 94, 0.4);
+      --accent-purple: #8b5cf6;
+      --accent-indigo: #6366f1;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --dice-size: 110px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+        linear-gradient(180deg, #060910 0%, #0a0e17 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 60px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1080px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .logo-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .svg-icon {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* STATS STRIP */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .stats-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+    }
+
+    .stat-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* MAIN STAGE */
+    .stage-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 860px) {
+      .stage-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* 3D TELEGRAM-STYLE DICE */
+    .dice-arena {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 420px;
+      position: relative;
+    }
+
+    .dice-wrapper {
+      width: var(--dice-size);
+      height: var(--dice-size);
+      perspective: 800px;
+      margin: 30px auto 36px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dice {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1.3s cubic-bezier(0.15, 0.9, 0.2, 1);
+      transform: rotateX(-22deg) rotateY(28deg);
+    }
+
+    /* Telegram Dice Face: Crisp White with sleek slate border & rounded corners */
+    .dice-face {
+      position: absolute;
+      width: var(--dice-size);
+      height: var(--dice-size);
+      background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+      border: 3px solid #8292a2;
+      border-radius: 26px;
+      box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.95),
+        inset 0 -2px 6px rgba(0, 0, 0, 0.08);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 12px;
+    }
+
+    /* Black Pips with glossy 3D indentation */
+    .pip {
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle at 35% 35%, #334155, #0a0f1d);
+      border-radius: 50%;
+      align-self: center;
+      justify-self: center;
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.8),
+        0 1px 1px rgba(255, 255, 255, 0.6);
+      position: relative;
+    }
+
+    .pip::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+    }
+
+    /* Authentic Telegram RED dot on Face 1 */
+    .pip-red {
+      width: 28px;
+      height: 28px;
+      background: radial-gradient(circle at 35% 35%, #ff4b4b, #b91c1c);
+      box-shadow: 
+        inset 0 2px 5px rgba(0, 0, 0, 0.5),
+        0 1px 2px rgba(255, 255, 255, 0.6),
+        0 0 12px rgba(239, 68, 68, 0.35);
+    }
+
+    .pip-red::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 5px;
+      width: 6px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 50%;
+    }
+
+    /* Pip positions on faces */
+    .pip-center { grid-area: 2 / 2; }
+    .pip-tl { grid-area: 1 / 1; }
+    .pip-tr { grid-area: 1 / 3; }
+    .pip-ml { grid-area: 2 / 1; }
+    .pip-mr { grid-area: 2 / 3; }
+    .pip-bl { grid-area: 3 / 1; }
+    .pip-br { grid-area: 3 / 3; }
+
+    /* 3D Cube transformation for faces */
+    .face-1 { transform: translateZ(calc(var(--dice-size) / 2)); }
+    .face-6 { transform: rotateY(180deg) translateZ(calc(var(--dice-size) / 2)); }
+    .face-2 { transform: rotateX(90deg) translateZ(calc(var(--dice-size) / 2)); }
+    .face-5 { transform: rotateX(-90deg) translateZ(calc(var(--dice-size) / 2)); }
+    .face-3 { transform: rotateY(90deg) translateZ(calc(var(--dice-size) / 2)); }
+    .face-4 { transform: rotateY(-90deg) translateZ(calc(var(--dice-size) / 2)); }
+
+    /* Dice shadow */
+    .dice-shadow {
+      width: 110px;
+      height: 22px;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, transparent 70%);
+      margin-top: -18px;
+      margin-bottom: 24px;
+      transition: all 1.3s ease;
+      filter: blur(4px);
+    }
+
+    .rolling .dice-shadow {
+      transform: scale(0.65);
+      opacity: 0.3;
+    }
+
+    /* Verdict Display */
+    .verdict-box {
+      min-height: 84px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+
+    .verdict-tag {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .verdict-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .verdict-title.yes {
+      color: var(--accent-yes);
+      text-shadow: 0 0 24px var(--accent-yes-glow);
+    }
+
+    .verdict-title.no {
+      color: var(--accent-no);
+      text-shadow: 0 0 24px var(--accent-no-glow);
+    }
+
+    .verdict-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .roll-btn {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 320px;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .roll-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
+    }
+
+    .roll-btn:active {
+      transform: translateY(0);
+    }
+
+    .roll-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    /* FORM STYLING */
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: rgba(10, 14, 23, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: var(--text-main);
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Tag pills */
+    .tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .tag-pill {
+      font-size: 12px;
+      padding: 5px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tag-pill:hover, .tag-pill.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent-indigo);
+      color: #fff;
+    }
+
+    /* BEAUTIFUL GRAPHICAL CHOICE BUTTONS */
+    .choice-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .choice-btn {
+      background: rgba(10, 14, 23, 0.85);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .choice-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .btn-badge-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .choice-btn.active {
+      background: rgba(99, 102, 241, 0.22);
+      border-color: var(--accent-indigo);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .choice-btn.active.yes {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: var(--accent-yes);
+      color: #34d399;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .choice-btn.active.no {
+      background: rgba(244, 63, 94, 0.18);
+      border-color: var(--accent-no);
+      color: #fb7185;
+      box-shadow: 0 0 12px rgba(244, 63, 94, 0.25);
+    }
+
+    .btn-save-record {
+      width: 100%;
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 14px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      margin-top: 16px;
+    }
+
+    .btn-save-record:hover {
+      background: #334155;
+      border-color: var(--accent-indigo);
+      transform: translateY(-1px);
+    }
+
+    /* AI INTEGRATION BAR */
+    .ai-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.2) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .ai-banner-text {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .ai-banner-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .ai-banner-desc {
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .btn-ai-copy {
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: #fff;
+      border: none;
+      padding: 12px 22px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .btn-ai-copy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.6);
+    }
+
+    /* HISTORY & FILTER */
+    .history-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+      background: rgba(10, 14, 23, 0.8);
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .filter-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-tab.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .entry-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .entry-card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+      background: rgba(20, 30, 55, 0.85);
+    }
+
+    .entry-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .entry-dice-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .entry-dice-badge.even {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1.5px solid var(--accent-yes);
+      color: var(--accent-yes);
+    }
+
+    .entry-dice-badge.odd {
+      background: rgba(244, 63, 94, 0.18);
+      border: 1.5px solid var(--accent-no);
+      color: var(--accent-no);
+    }
+
+    .entry-main {
+      flex: 1;
+    }
+
+    .entry-question {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+    }
+
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .badge-tag {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .badge-verdict {
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .badge-verdict.yes {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-yes);
+    }
+
+    .badge-verdict.no {
+      background: rgba(244, 63, 94, 0.2);
+      color: var(--accent-no);
+    }
+
+    .entry-notes {
+      font-size: 14px;
+      color: #cbd5e1;
+      background: rgba(10, 14, 23, 0.6);
+      border-left: 3px solid var(--accent-indigo);
+      padding: 10px 14px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      line-height: 1.45;
+    }
+
+    .entry-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 12px;
+    }
+
+    .entry-follow-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .action-icons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-text-action {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-text-action:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .btn-delete:hover {
+      color: var(--accent-no);
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      background: #131b2c;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      z-index: 2000;
+      opacity: 0;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">
+          <!-- 3D Dice Vector Icon -->
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
+            <circle cx="8" cy="8" r="1.5" fill="#fff"></circle>
+            <circle cx="16" cy="16" r="1.5" fill="#fff"></circle>
+            <circle cx="12" cy="12" r="1.5" fill="#fff"></circle>
+          </svg>
+        </div>
+        <div>
+          <h1 class="logo-title">Кубик Судьбы</h1>
+          <div class="logo-sub">Чётное = ДА • Нечётное = НЕТ</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="btnExportJson" title="Резервная копия данных">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          JSON
+        </button>
+        <button class="btn-icon" id="btnExportMd" title="Сохранить журнал в Markdown">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Экспорт .MD
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none;">
+        <button class="btn-icon" id="btnImportJson" title="Загрузить историю">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Импорт
+        </button>
+      </div>
+    </header>
+
+    <!-- STATS STRIP -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-label">Всего решений</div>
+        <div class="stat-val" id="statTotal">0</div>
+        <div class="stat-sub">запросов к кубику</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Баланс ДА / НЕТ</div>
+        <div class="stat-val" id="statRatio">0% / 0%</div>
+        <div class="stat-sub" id="statRatioCounts">0 ДА • 0 НЕТ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Следование ответу</div>
+        <div class="stat-val" id="statFollowed">0%</div>
+        <div class="stat-sub" id="statFollowedSub">послушался совета</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Удовлетворённость</div>
+        <div class="stat-val" id="statSatisfaction">0%</div>
+        <div class="stat-sub">доволен исходом</div>
+      </div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <div class="stage-grid">
+      
+      <!-- LEFT: 3D TELEGRAM-STYLE DICE & VERDICT -->
+      <div class="card dice-arena">
+        <div class="dice-wrapper" id="diceWrapper" title="Кликни, чтобы бросить!">
+          <div class="dice" id="dice">
+            <!-- FACE 1: Classic Telegram Big RED dot -->
+            <div class="dice-face face-1">
+              <span class="pip pip-red pip-center"></span>
+            </div>
+            <!-- FACE 6 -->
+            <div class="dice-face face-6">
+              <span class="pip pip-tl"></span>
+              <span class="pip pip-tr"></span>
+              <span class="pip pip-ml"></span>
+              <span class="pip pip-mr"></span>
+              <span class="pip pip-bl"></span>
+              <span class="pip pip-br"></span>
+            </div>
+            <!-- FACE 2 -->
+            <div class="dice-face face-2">
+              <span class="pip pip-tl"></span>
+              <span class="pip pip-br"></span>
+            </div>
+            <!-- FACE 5 -->
+            <div class="dice-face face-5">
+              <span class="pip pip-tl"></span>
+              <span class="pip pip-tr"></span>
+              <span class="pip pip-center"></span>
+              <span class="pip pip-bl"></span>
+              <span class="pip pip-br"></span>
+            </div>
+            <!-- FACE 3 -->
+            <div class="dice-face face-3">
+              <span class="pip pip-tl"></span>
+              <span class="pip pip-center"></span>
+              <span class="pip pip-br"></span>
+            </div>
+            <!-- FACE 4 -->
+            <div class="dice-face face-4">
+              <span class="pip pip-tl"></span>
+              <span class="pip pip-tr"></span>
+              <span class="pip pip-bl"></span>
+              <span class="pip pip-br"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dice-shadow"></div>
+
+        <!-- VERDICT (Concise, no mystical wording) -->
+        <div class="verdict-box" id="verdictBox">
+          <div class="verdict-tag" id="verdictTag">Результат</div>
+          <div class="verdict-title" id="verdictTitle">Брось кубик</div>
+          <div class="verdict-desc" id="verdictDesc">Чётное (2, 4, 6) = ДА • Нечётное (1, 3, 5) = НЕТ</div>
+        </div>
+
+        <button class="roll-btn" id="btnRoll">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="#fff"></circle>
+            <circle cx="15.5" cy="15.5" r="1.5" fill="#fff"></circle>
+            <circle cx="12" cy="12" r="1.5" fill="#fff"></circle>
+          </svg>
+          <span id="btnRollText">БРОСИТЬ КУБИК</span>
+        </button>
+        <div class="roll-hint">или нажми <b>Пробел</b> на клавиатуре</div>
+      </div>
+
+      <!-- RIGHT: FORM & DETAILS -->
+      <div class="card">
+        <div class="card-title">
+          <span>Запрос и фиксация исхода</span>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: normal;">Запись в историю</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="questionInput">В чём твой вопрос?</label>
+          <input 
+            type="text" 
+            id="questionInput" 
+            class="form-input" 
+            placeholder="Введи вопрос или запрос..." 
+            autocomplete="off"
+          >
+          <div class="tags-row" id="tagsRow">
+            <span class="tag-pill" data-cat="Семья и близкие">Семья и близкие</span>
+            <span class="tag-pill" data-cat="Покупки / Деньги">Покупки / Деньги</span>
+            <span class="tag-pill" data-cat="Здоровье / Спорт">Здоровье / Спорт</span>
+            <span class="tag-pill" data-cat="Работа / Учёба">Работа / Учёба</span>
+            <span class="tag-pill" data-cat="Быт и рутина">Быт и рутина</span>
+            <span class="tag-pill" data-cat="Спонтанность">Спонтанность</span>
+          </div>
+        </div>
+
+        <!-- FOLLOW UP (WITH SLEEK VECTOR ICONS) -->
+        <div class="form-group">
+          <label class="form-label">Ты последовал ответу?</label>
+          <div class="choice-group" id="choiceFollowed">
+            <button type="button" class="choice-btn active yes" data-val="followed">
+              <svg class="btn-badge-icon" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1.5"/>
+                <path d="M6 10.2L8.7 13L14 7.5" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Послушался</span>
+            </button>
+            <button type="button" class="choice-btn no" data-val="defied">
+              <svg class="btn-badge-icon" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="rgba(244, 63, 94, 0.2)" stroke="#f43f5e" stroke-width="1.5"/>
+                <path d="M7 7L13 13M13 7L7 13" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>Наоборот</span>
+            </button>
+            <button type="button" class="choice-btn" data-val="pending">
+              <svg class="btn-badge-icon" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="9" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.5"/>
+                <path d="M10 5.5V10.5L13.5 12" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              <span>Пока думаю</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OUTCOME & EMOTIONS (WITH POLISHED VECTOR FACES) -->
+        <div class="form-group">
+          <label class="form-label">Оценка исхода / Ощущения</label>
+          <div class="choice-group" id="choiceOutcome" style="grid-template-columns: repeat(4, 1fr);">
+            <button type="button" class="choice-btn active" data-val="pleased">
+              <svg class="btn-badge-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="rgba(16, 185, 129, 0.15)" stroke="#10b981" stroke-width="1.8"/>
+                <path d="M8 13.5C9 15.5 11 16.5 12 16.5C13 16.5 15 15.5 16 13.5" stroke="#10b981" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="9" cy="9.5" r="1.5" fill="#10b981"/>
+                <circle cx="15" cy="9.5" r="1.5" fill="#10b981"/>
+              </svg>
+              <span>Доволен</span>
+            </button>
+            <button type="button" class="choice-btn" data-val="neutral">
+              <svg class="btn-badge-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="rgba(245, 158, 11, 0.15)" stroke="#f59e0b" stroke-width="1.8"/>
+                <line x1="8" y1="15" x2="16" y2="15" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="9" cy="9.5" r="1.5" fill="#f59e0b"/>
+                <circle cx="15" cy="9.5" r="1.5" fill="#f59e0b"/>
+              </svg>
+              <span>Нормально</span>
+            </button>
+            <button type="button" class="choice-btn" data-val="regret">
+              <svg class="btn-badge-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="rgba(244, 63, 94, 0.15)" stroke="#f43f5e" stroke-width="1.8"/>
+                <path d="M16 16C15 14.2 13 13.5 12 13.5C11 13.5 9 14.2 8 16" stroke="#f43f5e" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="9" cy="9.5" r="1.5" fill="#f43f5e"/>
+                <circle cx="15" cy="9.5" r="1.5" fill="#f43f5e"/>
+              </svg>
+              <span>Пожалел</span>
+            </button>
+            <button type="button" class="choice-btn" data-val="unknown">
+              <svg class="btn-badge-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" fill="rgba(148, 163, 184, 0.15)" stroke="#94a3b8" stroke-width="1.8"/>
+                <path d="M9.5 9C9.5 7.5 10.5 6.5 12 6.5C13.5 6.5 14.5 7.5 14.5 8.7C14.5 10 12.8 10.8 12.3 11.8C12.1 12.2 12.1 12.5 12.1 13" stroke="#94a3b8" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="12.1" cy="16.5" r="1" fill="#94a3b8"/>
+              </svg>
+              <span>Не ясно</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- NOTES & CONSEQUENCES -->
+        <div class="form-group">
+          <label class="form-label" for="notesInput">Последствия и заметки (можно дописать позже)</label>
+          <textarea 
+            id="notesInput" 
+            class="form-textarea" 
+            placeholder="Что произошло? К чему привело решение?"
+          ></textarea>
+        </div>
+
+        <button class="btn-save-record" id="btnSaveRecord">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          <span>Записать решение в историю</span>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- AI PROMPT BANNER -->
+    <div class="ai-banner">
+      <div class="ai-banner-text">
+        <div class="ai-banner-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+          <span>Анализ и выводы с ИИ</span>
+        </div>
+        <div class="ai-banner-desc">
+          Скопируйте статистику решений и последствий в один клик и вставьте в чат — агент сделает глубокий разбор ваших выборов, паттернов сомнений и реальной пользы жребия.
+        </div>
+      </div>
+      <button class="btn-ai-copy" id="btnAiCopy">
+        <svg class="svg-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>Скопировать для разбора</span>
+      </button>
+    </div>
+
+    <!-- HISTORY SECTION -->
+    <div class="card">
+      <div class="history-controls">
+        <div class="card-title" style="margin-bottom: 0;">
+          <span>История решений и последствий</span>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input 
+            type="text" 
+            id="searchHistory" 
+            class="form-input" 
+            style="padding: 6px 12px; font-size: 13px; width: 200px;" 
+            placeholder="Поиск по вопросу..."
+          >
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">Все</button>
+            <button class="filter-tab" data-filter="yes">Только ДА</button>
+            <button class="filter-tab" data-filter="no">Только НЕТ</button>
+            <button class="filter-tab" data-filter="has_notes">С заметками</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="history-list" id="historyList">
+        <!-- Entries rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT RECORD MODAL -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal">
+      <div class="modal-title">Редактировать последствия и статус</div>
+      
+      <div class="form-group">
+        <label class="form-label" id="editModalQuestionTitle" style="color: #fff; font-size: 15px;"></label>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Ты последовал ответу?</label>
+        <div class="choice-group" id="editChoiceFollowed">
+          <button type="button" class="choice-btn" data-val="followed">Послушался</button>
+          <button type="button" class="choice-btn" data-val="defied">Наоборот</button>
+          <button type="button" class="choice-btn" data-val="pending">Пока думаю</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Оценка исхода</label>
+        <div class="choice-group" id="editChoiceOutcome" style="grid-template-columns: repeat(4, 1fr);">
+          <button type="button" class="choice-btn" data-val="pleased">Доволен</button>
+          <button type="button" class="choice-btn" data-val="neutral">Нормально</button>
+          <button type="button" class="choice-btn" data-val="regret">Пожалел</button>
+          <button type="button" class="choice-btn" data-val="unknown">Не ясно</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="editModalNotes">Последствия и заметки:</label>
+        <textarea id="editModalNotes" class="form-textarea" rows="4" placeholder="Что произошло спустя время?"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-icon" id="btnCancelEdit">Отмена</button>
+        <button class="roll-btn" id="btnSaveEdit" style="margin-top: 0; width: auto; padding: 10px 20px;">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toastBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toastMsg">Скопировано в буфер обмена!</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'oracle_dice_records_v1';
+
+    let records = [];
+    let isRolling = false;
+    let lastRoll = null;
+    let currentRotX = -22;
+    let currentRotY = 28;
+    let selectedCategory = '';
+    let selectedFollowed = 'followed';
+    let selectedOutcome = 'pleased';
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let editingId = null;
+
+    // Load initial data
+    try {
+      const storedRecords = localStorage.getItem(STORAGE_KEY);
+      if (storedRecords) records = JSON.parse(storedRecords);
+    } catch (e) {
+      console.error('Failed to parse localStorage', e);
+    }
+
+    // Orientations for each face:
+    const FACE_ROTATIONS = {
+      1: { x: 0,   y: 0 },
+      2: { x: -90, y: 0 },
+      3: { x: 0,   y: -90 },
+      4: { x: 0,   y: 90 },
+      5: { x: 90,  y: 0 },
+      6: { x: 0,   y: 180 }
+    };
+
+    function getRandomDieValue() {
+      const arr = new Uint32Array(1);
+      window.crypto.getRandomValues(arr);
+      return (arr[0] % 6) + 1;
+    }
+
+    function rollDice() {
+      if (isRolling) return;
+      isRolling = true;
+
+      const diceWrapper = document.getElementById('diceWrapper');
+      const diceEl = document.getElementById('dice');
+      const btnRoll = document.getElementById('btnRoll');
+      const btnRollText = document.getElementById('btnRollText');
+      const verdictTag = document.getElementById('verdictTag');
+      const verdictTitle = document.getElementById('verdictTitle');
+      const verdictDesc = document.getElementById('verdictDesc');
+
+      diceWrapper.classList.add('rolling');
+      btnRoll.style.pointerEvents = 'none';
+      btnRollText.textContent = 'ВРАЩЕНИЕ...';
+      verdictTitle.className = 'verdict-title';
+      verdictTitle.textContent = 'Бросок...';
+      verdictDesc.textContent = 'Определение результата...';
+
+      // Pick result
+      const targetValue = getRandomDieValue();
+      const isEven = targetValue % 2 === 0;
+      const targetRot = FACE_ROTATIONS[targetValue];
+
+      // Add revolutions
+      const extraSpinsX = 360 * (3 + Math.floor(Math.random() * 2));
+      const extraSpinsY = 360 * (3 + Math.floor(Math.random() * 2));
+
+      currentRotX = Math.ceil(currentRotX / 360) * 360 + extraSpinsX + targetRot.x;
+      currentRotY = Math.ceil(currentRotY / 360) * 360 + extraSpinsY + targetRot.y;
+
+      diceEl.style.transform = `rotateX(${currentRotX}deg) rotateY(${currentRotY}deg)`;
+
+      setTimeout(() => {
+        isRolling = false;
+        diceWrapper.classList.remove('rolling');
+        btnRoll.style.pointerEvents = 'auto';
+        btnRollText.textContent = 'БРОСИТЬ СНОВА';
+
+        lastRoll = {
+          number: targetValue,
+          isEven: isEven,
+          timestamp: new Date().toISOString()
+        };
+
+        // Update Verdict UI (Concise, confident)
+        verdictTag.textContent = `ВЫПАЛО: ${targetValue} (${isEven ? 'ЧЁТНОЕ' : 'НЕЧЁТНОЕ'})`;
+        if (isEven) {
+          verdictTitle.className = 'verdict-title yes';
+          verdictTitle.textContent = 'ДА';
+          verdictDesc.textContent = 'Решение: ДЕЛАТЬ / ДЕЙСТВУЙ';
+        } else {
+          verdictTitle.className = 'verdict-title no';
+          verdictTitle.textContent = 'НЕТ';
+          verdictDesc.textContent = 'Решение: НЕ ДЕЛАТЬ / ОТЛОЖИ';
+        }
+
+        const qInput = document.getElementById('questionInput');
+        if (!qInput.value.trim()) {
+          qInput.focus();
+        }
+      }, 1300);
+    }
+
+    function saveRecord() {
+      const qInput = document.getElementById('questionInput');
+      const notesInput = document.getElementById('notesInput');
+      const question = qInput.value.trim() || 'Решение без формулировки вопроса';
+
+      if (!lastRoll) {
+        showToast('Сначала брось кубик!');
+        return;
+      }
+
+      const newRecord = {
+        id: 'rec_' + Date.now(),
+        question: question,
+        category: selectedCategory || 'Общее',
+        diceNumber: lastRoll.number,
+        isEven: lastRoll.isEven,
+        verdictText: lastRoll.isEven ? 'ДА' : 'НЕТ',
+        followed: selectedFollowed,
+        outcome: selectedOutcome,
+        notes: notesInput.value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      records.unshift(newRecord);
+      persistRecords();
+
+      qInput.value = '';
+      notesInput.value = '';
+      selectedCategory = '';
+      document.querySelectorAll('.tag-pill').forEach(el => el.classList.remove('active'));
+
+      renderHistory();
+      renderStats();
+      showToast('Запись сохранена в историю!');
+    }
+
+    function persistRecords() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      } catch (e) {
+        console.error('Error writing localStorage', e);
+      }
+    }
+
+    function renderStats() {
+      const total = records.length;
+      document.getElementById('statTotal').textContent = total;
+
+      if (total === 0) {
+        document.getElementById('statRatio').textContent = '0% / 0%';
+        document.getElementById('statRatioCounts').textContent = '0 ДА • 0 НЕТ';
+        document.getElementById('statFollowed').textContent = '0%';
+        document.getElementById('statFollowedSub').textContent = 'послушался совета';
+        document.getElementById('statSatisfaction').textContent = '0%';
+        return;
+      }
+
+      const yesCount = records.filter(r => r.isEven).length;
+      const noCount = total - yesCount;
+      const yesPct = Math.round((yesCount / total) * 100);
+      const noPct = 100 - yesPct;
+
+      document.getElementById('statRatio').textContent = `${yesPct}% / ${noPct}%`;
+      document.getElementById('statRatioCounts').textContent = `${yesCount} ДА • ${noCount} НЕТ`;
+
+      const followedCount = records.filter(r => r.followed === 'followed').length;
+      const followedPct = Math.round((followedCount / total) * 100);
+      document.getElementById('statFollowed').textContent = `${followedPct}%`;
+      document.getElementById('statFollowedSub').textContent = `${followedCount} из ${total} решений`;
+
+      const pleasedCount = records.filter(r => r.outcome === 'pleased').length;
+      const evaluatedCount = records.filter(r => r.outcome !== 'unknown').length;
+      const satisfactionPct = evaluatedCount > 0 ? Math.round((pleasedCount / evaluatedCount) * 100) : 0;
+      document.getElementById('statSatisfaction').textContent = `${satisfactionPct}%`;
+    }
+
+    function renderHistory() {
+      const historyList = document.getElementById('historyList');
+      let filtered = [...records];
+
+      if (currentFilter === 'yes') {
+        filtered = filtered.filter(r => r.isEven);
+      } else if (currentFilter === 'no') {
+        filtered = filtered.filter(r => !r.isEven);
+      } else if (currentFilter === 'has_notes') {
+        filtered = filtered.filter(r => r.notes && r.notes.trim().length > 0);
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(r => 
+          r.question.toLowerCase().includes(q) || 
+          (r.notes && r.notes.toLowerCase().includes(q)) ||
+          r.category.toLowerCase().includes(q)
+        );
+      }
+
+      if (filtered.length === 0) {
+        historyList.innerHTML = `
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-state-icon" style="margin: 0 auto 12px; display: block;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <p>В этом списке пока нет записей.</p>
+          </div>
+        `;
+        return;
+      }
+
+      historyList.innerHTML = filtered.map(r => {
+        const dateStr = new Date(r.createdAt).toLocaleString('ru-RU', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+
+        const followLabel = r.followed === 'followed' 
+          ? 'Послушался' 
+          : (r.followed === 'defied' ? 'Сделал наоборот' : 'Пока думаю');
+
+        let outcomeBadge = '';
+        if (r.outcome === 'pleased') outcomeBadge = 'Доволен';
+        else if (r.outcome === 'neutral') outcomeBadge = 'Нормально';
+        else if (r.outcome === 'regret') outcomeBadge = 'Пожалел';
+        else outcomeBadge = 'Не ясно';
+
+        return `
+          <div class="entry-card" data-id="${r.id}">
+            <div class="entry-top">
+              <div class="entry-dice-badge ${r.isEven ? 'even' : 'odd'}" title="Выпало ${r.diceNumber}">
+                ${r.diceNumber}
+              </div>
+              <div class="entry-main">
+                <div class="entry-question">${escapeHtml(r.question)}</div>
+                <div class="entry-meta">
+                  <span>${dateStr}</span>
+                  <span class="badge-tag">${escapeHtml(r.category)}</span>
+                  <span class="badge-verdict ${r.isEven ? 'yes' : 'no'}">
+                    ${r.isEven ? 'ДА' : 'НЕТ'}
+                  </span>
+                  <span class="badge-tag">${outcomeBadge}</span>
+                </div>
+              </div>
+            </div>
+
+            ${r.notes ? `
+              <div class="entry-notes">
+                <b>Последствия:</b> ${escapeHtml(r.notes)}
+              </div>
+            ` : ''}
+
+            <div class="entry-actions">
+              <div class="entry-follow-status">
+                <span>Действие:</span> <b>${followLabel}</b>
+              </div>
+              <div class="action-icons">
+                <button class="btn-text-action" onclick="openEditModal('${r.id}')">
+                  Редактировать
+                </button>
+                <button class="btn-text-action btn-delete" onclick="deleteRecord('${r.id}')">
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function openEditModal(id) {
+      const rec = records.find(r => r.id === id);
+      if (!rec) return;
+
+      editingId = id;
+      document.getElementById('editModalQuestionTitle').textContent = `«${rec.question}» (Кубик: ${rec.diceNumber} → ${rec.verdictText})`;
+      document.getElementById('editModalNotes').value = rec.notes || '';
+
+      setActiveChoice('editChoiceFollowed', rec.followed || 'followed');
+      setActiveChoice('editChoiceOutcome', rec.outcome || 'unknown');
+
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function closeEditModal() {
+      editingId = null;
+      document.getElementById('editModal').classList.remove('open');
+    }
+
+    function saveEditModal() {
+      if (!editingId) return;
+      const rec = records.find(r => r.id === editingId);
+      if (!rec) return;
+
+      rec.notes = document.getElementById('editModalNotes').value.trim();
+      rec.followed = getActiveChoice('editChoiceFollowed') || 'followed';
+      rec.outcome = getActiveChoice('editChoiceOutcome') || 'unknown';
+
+      persistRecords();
+      renderHistory();
+      renderStats();
+      closeEditModal();
+      showToast('Запись обновлена!');
+    }
+
+    function deleteRecord(id) {
+      if (!confirm('Удалить эту запись?')) return;
+      records = records.filter(r => r.id !== id);
+      persistRecords();
+      renderHistory();
+      renderStats();
+      showToast('Запись удалена');
+    }
+
+    function setActiveChoice(groupId, val) {
+      const container = document.getElementById(groupId);
+      if (!container) return;
+      container.querySelectorAll('.choice-btn').forEach(btn => {
+        if (btn.dataset.val === val) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    function getActiveChoice(groupId) {
+      const container = document.getElementById(groupId);
+      if (!container) return '';
+      const active = container.querySelector('.choice-btn.active');
+      return active ? active.dataset.val : '';
+    }
+
+    function generateAiSummary() {
+      if (records.length === 0) {
+        showToast('Сначала сделай и сохрани хотя бы одно решение!');
+        return;
+      }
+
+      const total = records.length;
+      const yesCount = records.filter(r => r.isEven).length;
+      const noCount = total - yesCount;
+      const followedCount = records.filter(r => r.followed === 'followed').length;
+      const defiedCount = records.filter(r => r.followed === 'defied').length;
+      const pleasedCount = records.filter(r => r.outcome === 'pleased').length;
+      const regretCount = records.filter(r => r.outcome === 'regret').length;
+
+      let prompt = `Привет! Вот моя статистика и летопись решений через кубик (чётное = ДА, нечётное = НЕТ).\n\n`;
+      prompt += `### СВОДКА:\n`;
+      prompt += `- Всего решений: ${total}\n`;
+      prompt += `- Вердикты кубика: ДА — ${yesCount} (${Math.round(yesCount/total*100)}%), НЕТ — ${noCount} (${Math.round(noCount/total*100)}%)\n`;
+      prompt += `- Следование ответу: послушался — ${followedCount}, сделал наоборот — ${defiedCount}\n`;
+      prompt += `- Оценка исходов: доволен — ${pleasedCount}, пожалел — ${regretCount}\n\n`;
+
+      prompt += `### СПИСОК РЕШЕНИЙ:\n`;
+      records.forEach((r, idx) => {
+        const date = new Date(r.createdAt).toLocaleDateString('ru-RU');
+        const followText = r.followed === 'followed' ? 'Послушался' : (r.followed === 'defied' ? 'Сделал наоборот' : 'Отложил');
+        prompt += `${idx + 1}. [${date}] Вопрос: "${r.question}"\n`;
+        prompt += `   • Сфера: ${r.category} | Выпало: ${r.diceNumber} (Вердикт: ${r.verdictText})\n`;
+        prompt += `   • Действие: ${followText} | Исход: ${r.outcome}\n`;
+        if (r.notes) {
+          prompt += `   • Последствия: "${r.notes}"\n`;
+        }
+        prompt += `\n`;
+      });
+
+      prompt += `### ЗАПРОС К АГЕНТУ НА АНАЛИЗ:\n`;
+      prompt += `Сделай психологический и практический разбор моих решений:\n`;
+      prompt += `1. В каких сферах я чаще всего использую кубик для снятия сомнений?\n`;
+      prompt += `2. Как соотносятся результаты: когда я последовал ответу vs когда поступил вопреки?\n`;
+      prompt += `3. Заметен ли паттерн сопротивления (когда выпадает ДА, но я саботирую)?\n`;
+      prompt += `4. Главные выводы и рекомендации по моим решениям.\n`;
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        showToast('Отчёт скопирован! Вставь его в чат для анализа.');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = prompt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Отчёт скопирован! Вставь его в чат.');
+      });
+    }
+
+    function downloadFile(content, fileName, contentType) {
+      const a = document.createElement('a');
+      const file = new Blob([content], { type: contentType });
+      a.href = URL.createObjectURL(file);
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportJson() {
+      if (records.length === 0) {
+        showToast('История пуста');
+        return;
+      }
+      const json = JSON.stringify(records, null, 2);
+      downloadFile(json, `кубик-история-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+      showToast('Файл JSON скачан');
+    }
+
+    function exportMarkdown() {
+      if (records.length === 0) {
+        showToast('История пуста');
+        return;
+      }
+      let md = `# Журнал решений (Кубик)\n\n*Выгружено: ${new Date().toLocaleString('ru-RU')}*\n\n`;
+      records.forEach((r, i) => {
+        const d = new Date(r.createdAt).toLocaleString('ru-RU');
+        md += `## ${i+1}. ${r.question}\n`;
+        md += `- **Дата:** ${d}\n`;
+        md += `- **Сфера:** ${r.category}\n`;
+        md += `- **Кубик:** ${r.diceNumber} → **${r.verdictText}**\n`;
+        md += `- **Действие:** ${r.followed}\n`;
+        md += `- **Оценка исхода:** ${r.outcome}\n`;
+        if (r.notes) md += `- **Последствия:**\n  > ${r.notes.replace(/\n/g, '\n  > ')}\n`;
+        md += `\n---\n\n`;
+      });
+      downloadFile(md, `кубик-журнал-${new Date().toISOString().slice(0,10)}.md`, 'text/markdown');
+      showToast('Markdown файл скачан');
+    }
+
+    function importJson(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            records = imported;
+            persistRecords();
+            renderHistory();
+            renderStats();
+            showToast(`Загружено ${records.length} записей!`);
+          } else {
+            showToast('Неверный формат файла');
+          }
+        } catch (err) {
+          showToast('Ошибка чтения файла');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('diceWrapper').addEventListener('click', rollDice);
+      document.getElementById('btnRoll').addEventListener('click', rollDice);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          rollDice();
+        }
+      });
+
+      document.getElementById('tagsRow').addEventListener('click', (e) => {
+        if (e.target.classList.contains('tag-pill')) {
+          document.querySelectorAll('.tag-pill').forEach(el => el.classList.remove('active'));
+          e.target.classList.add('active');
+          selectedCategory = e.target.dataset.cat;
+        }
+      });
+
+      function setupChoiceGroup(groupId, onChange) {
+        document.getElementById(groupId).addEventListener('click', (e) => {
+          const btn = e.target.closest('.choice-btn');
+          if (!btn) return;
+          document.querySelectorAll(`#${groupId} .choice-btn`).forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          onChange(btn.dataset.val);
+        });
+      }
+
+      setupChoiceGroup('choiceFollowed', (val) => selectedFollowed = val);
+      setupChoiceGroup('choiceOutcome', (val) => selectedOutcome = val);
+
+      document.getElementById('btnSaveRecord').addEventListener('click', saveRecord);
+      document.getElementById('btnAiCopy').addEventListener('click', generateAiSummary);
+      document.getElementById('btnExportJson').addEventListener('click', exportJson);
+      document.getElementById('btnExportMd').addEventListener('click', exportMarkdown);
+      
+      const importInput = document.getElementById('importFileInput');
+      document.getElementById('btnImportJson').addEventListener('click', () => importInput.click());
+      importInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          importJson(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+          e.target.classList.add('active');
+          currentFilter = e.target.dataset.filter;
+          renderHistory();
+        });
+      });
+
+      document.getElementById('searchHistory').addEventListener('input', (e) => {
+        searchQuery = e.target.value.trim();
+        renderHistory();
+      });
+
+      setupChoiceGroup('editChoiceFollowed', () => {});
+      setupChoiceGroup('editChoiceOutcome', () => {});
+      document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+      document.getElementById('btnSaveEdit').addEventListener('click', saveEditModal);
+
+      renderStats();
+      renderHistory();
+    });
+  </script>
+</body>
+</html>

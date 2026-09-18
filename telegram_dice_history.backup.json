@@ -1,0 +1,70 @@
+[
+  {
+    "id": "rec_1789705953503",
+    "question": "Пойти в качалку перед учебой? В 17 с чем-то?",
+    "category": "Здоровье и спорт",
+    "diceNumber": 3,
+    "isEven": false,
+    "verdictText": "НЕТ",
+    "followed": "followed",
+    "outcome": "neutral",
+    "notes": "",
+    "createdAt": "2026-09-18T04:32:33.503Z",
+    "diceValue": 3,
+    "chatId": "576401462"
+  },
+  {
+    "id": "rec_1789705904996",
+    "question": "Идти в качалку в 8:20",
+    "category": "Быт и рутина",
+    "diceNumber": 1,
+    "isEven": false,
+    "verdictText": "НЕТ",
+    "followed": "followed",
+    "outcome": "pleased",
+    "notes": "",
+    "createdAt": "2026-09-18T04:31:44.996Z",
+    "diceValue": 1,
+    "chatId": "576401462"
+  },
+  {
+    "id": "rec_1789682784605",
+    "chatId": "576401462",
+    "question": "позвонить бабушке",
+    "category": "Отношения и семья",
+    "diceValue": 5,
+    "isEven": false,
+    "verdictText": "НЕТ",
+    "followed": "pending",
+    "outcome": "unknown",
+    "notes": "",
+    "createdAt": "2026-09-17T22:06:24.606Z"
+  },
+  {
+    "id": "rec_1789682784434",
+    "chatId": "576401462",
+    "question": "позвонить бабушке",
+    "category": "Отношения и семья",
+    "diceValue": 6,
+    "isEven": true,
+    "verdictText": "ДА",
+    "followed": "followed",
+    "outcome": "pleased",
+    "notes": "хорошо поговорили",
+    "createdAt": "2026-09-17T22:06:24.435Z",
+    "diceNumber": 6
+  },
+  {
+    "id": "rec_1789736752215",
+    "chatId": "576401462",
+    "question": "",
+    "category": "Спонтанность",
+    "diceValue": 5,
+    "isEven": false,
+    "verdictText": "НЕТ",
+    "followed": "pending",
+    "outcome": "unknown",
+    "notes": "",
+    "createdAt": "2026-09-18T13:05:52.215Z"
+  }
+]
