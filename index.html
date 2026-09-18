@@ -2077,6 +2077,7 @@
       if (!container || !canvas || typeof THREE === 'undefined') return;
 
       const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x060c1c, 0.16);
       const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
       camera.position.set(2.4, 2.0, 3.8);
       camera.lookAt(0, -0.10, 0);
@@ -2144,22 +2145,25 @@
         0,  0,  0,  1
       );
 
-      // ─── DEEP LAGOON WATER SURFACE ───
-      const floorMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(16, 16),
-        new THREE.MeshStandardMaterial({
-          color: 0x040a16,
-          roughness: 0.05,
-          metalness: 0.88,
-          transparent: true,
-          opacity: 0.82
-        })
-      );
-      floorMesh.rotation.x = -Math.PI / 2;
+      // ─── DEEP LAGOON 3D PHYSICAL WATER SURFACE ───
+      const waterGridRes = 60;
+      const waterGeo = new THREE.PlaneGeometry(16, 16, waterGridRes, waterGridRes);
+      waterGeo.rotateX(-Math.PI / 2);
+      const waterBasePositions = waterGeo.attributes.position.array.slice();
+
+      const waterMat = new THREE.MeshStandardMaterial({
+        color: 0x061933,
+        roughness: 0.05,
+        metalness: 0.90,
+        transparent: true,
+        opacity: 0.88,
+        flatShading: false
+      });
+      const floorMesh = new THREE.Mesh(waterGeo, waterMat);
       floorMesh.position.y = floorY;
       scene.add(floorMesh);
 
-      // Underwater glowing bioluminescent pool disk
+      // Underwater glowing bioluminescent pool disk (placed under water)
       const wCanvas = document.createElement('canvas');
       wCanvas.width = 256; wCanvas.height = 256;
       const wCtx = wCanvas.getContext('2d');
@@ -2179,229 +2183,245 @@
         })
       );
       waterPoolMesh.rotation.x = -Math.PI / 2;
-      waterPoolMesh.position.set(0, floorY + 0.002, 0);
+      waterPoolMesh.position.set(0, floorY - 0.015, 0);
       scene.add(waterPoolMesh);
 
-      // Soft water contact shadow
-      const sCanvas = document.createElement('canvas');
-      sCanvas.width = 256; sCanvas.height = 256;
-      const sCtx = sCanvas.getContext('2d');
-      const sGrad = sCtx.createRadialGradient(128, 128, 10, 128, 128, 110);
-      sGrad.addColorStop(0, 'rgba(1, 4, 10, 0.95)');
-      sGrad.addColorStop(0.45, 'rgba(2, 6, 16, 0.40)');
-      sGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      sCtx.fillStyle = sGrad; sCtx.fillRect(0, 0, 256, 256);
-      const sTex = new THREE.CanvasTexture(sCanvas);
+      // Safe virtual shadow proxy to eliminate any jagged clipping with water waves
+      const sMesh = { scale: { set: () => {} }, material: { opacity: 1 } };
 
-      const sMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 1.5),
-        new THREE.MeshBasicMaterial({ map: sTex, transparent: true, opacity: 0.90 })
-      );
-      sMesh.rotation.x = -Math.PI / 2;
-      sMesh.position.y = floorY + 0.003;
-      scene.add(sMesh);
-
-      // ─── DYNAMIC WATER RIPPLES SYSTEM ───
-      const MAX_RIPPLES = 18;
-      const rippleGroup = new THREE.Group();
-      scene.add(rippleGroup);
-
-      const rCanvas = document.createElement('canvas');
-      rCanvas.width = 128; rCanvas.height = 128;
-      const rctx = rCanvas.getContext('2d');
-      rctx.clearRect(0, 0, 128, 128);
-      rctx.beginPath();
-      rctx.arc(64, 64, 52, 0, Math.PI * 2);
-      rctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
-      rctx.lineWidth = 10;
-      rctx.stroke();
-      rctx.beginPath();
-      rctx.arc(64, 64, 52, 0, Math.PI * 2);
-      rctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-      rctx.lineWidth = 2.8;
-      rctx.stroke();
-      const rippleTexture = new THREE.CanvasTexture(rCanvas);
-
-      const rippleGeom = new THREE.PlaneGeometry(1, 1);
-      const ripplePool = [];
-
-      for (let i = 0; i < MAX_RIPPLES; i++) {
-        const mat = new THREE.MeshBasicMaterial({
-          map: rippleTexture,
-          transparent: true,
-          opacity: 0,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
-        });
-        const rMesh = new THREE.Mesh(rippleGeom, mat);
-        rMesh.rotation.x = -Math.PI / 2;
-        rMesh.position.y = floorY + 0.004;
-        rMesh.visible = false;
-        rippleGroup.add(rMesh);
-
-        ripplePool.push({
-          mesh: rMesh,
-          mat: mat,
-          active: false,
-          scale: 0.08,
-          maxScale: 2.8,
-          speed: 1.5,
-          initialOpacity: 0.85
-        });
+      // ─── 3D PHYSICAL WAVE SOURCES ENGINE ───
+      const waveSources = [];
+      function addWaveSource(x = 0, z = 0, amplitude = 0.09) {
+        waveSources.push({ x, z, startTime: performance.now(), amplitude });
+        if (waveSources.length > 8) waveSources.shift();
       }
 
-      function spawnRipple(x = 0, z = 0, maxScale = 2.6, speed = 1.4, initialOpacity = 0.8, colorHex = 0x38bdf8) {
-        const r = ripplePool.find(item => !item.active) || ripplePool[0];
-        r.active = true;
-        r.scale = 0.08;
-        r.maxScale = maxScale;
-        r.speed = speed;
-        r.initialOpacity = initialOpacity;
-        r.mat.color.setHex(colorHex);
-        r.mat.opacity = initialOpacity;
-        r.mesh.position.set(x, floorY + 0.004, z);
-        r.mesh.scale.set(0.08, 0.08, 1);
-        r.mesh.visible = true;
-      }
+      function updateWaterWaves(now) {
+        const pos = waterGeo.attributes.position;
+        const arr = pos.array;
+        const count = pos.count;
+        for (let i = 0; i < count; i++) {
+          const bx = waterBasePositions[i * 3];
+          const bz = waterBasePositions[i * 3 + 2];
 
-      function updateRipples(dt) {
-        for (let i = 0; i < ripplePool.length; i++) {
-          const r = ripplePool[i];
-          if (!r.active) continue;
-          r.scale += r.speed * dt;
-          r.mesh.scale.set(r.scale, r.scale, 1);
-          const progress = Math.min(r.scale / r.maxScale, 1);
-          r.mat.opacity = Math.max(0, (1 - progress * progress) * r.initialOpacity);
-          if (progress >= 1) {
-            r.active = false;
-            r.mesh.visible = false;
+          // Gentle ambient lagoon breathing swell
+          let dy = Math.sin(bx * 1.8 + now * 0.0022) * Math.cos(bz * 1.8 + now * 0.0018) * 0.009;
+
+          // Propagating 3D wave rings from splashes and impacts
+          for (let s = 0; s < waveSources.length; s++) {
+            const src = waveSources[s];
+            const age = (now - src.startTime) * 0.001;
+            if (age > 3.2) continue;
+            const dx = bx - src.x;
+            const dz = bz - src.z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            const waveDist = age * 2.7;
+            const distFromFront = dist - waveDist;
+            if (Math.abs(distFromFront) < 1.4) {
+              const envelope = Math.exp(-distFromFront * distFromFront * 4.2) * Math.exp(-age * 1.2);
+              dy += Math.sin(dist * 14.0 - age * 18.0) * src.amplitude * envelope;
+            }
           }
+          arr[i * 3 + 1] = dy;
         }
+        pos.needsUpdate = true;
+        waterGeo.computeVertexNormals();
       }
 
-      // ─── 3D WATER SPLASH PARTICLE SYSTEM ───
-      const MAX_SPLASH_DROPS = 55;
-      const dropCanvas = document.createElement('canvas');
-      dropCanvas.width = 64; dropCanvas.height = 64;
-      const dctx = dropCanvas.getContext('2d');
-      const dgrad = dctx.createRadialGradient(32, 32, 2, 32, 32, 30);
-      dgrad.addColorStop(0, '#ffffff');
-      dgrad.addColorStop(0.25, 'rgba(224, 242, 254, 0.95)');
-      dgrad.addColorStop(0.55, 'rgba(56, 189, 248, 0.75)');
-      dgrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-      dctx.fillStyle = dgrad;
-      dctx.beginPath();
-      dctx.arc(32, 32, 30, 0, Math.PI * 2);
-      dctx.fill();
-      const dropTexture = new THREE.CanvasTexture(dropCanvas);
+      // ─── 3D WATER DROPLETS BEAD SYSTEM (INSTANCED MESH) ───
+      const MAX_DROPS = 120;
+      const dropletGeo = new THREE.SphereGeometry(0.018, 8, 6);
 
-      const splashPositions = new Float32Array(MAX_SPLASH_DROPS * 3);
-      const splashColors = new Float32Array(MAX_SPLASH_DROPS * 3);
-      const splashGeom = new THREE.BufferGeometry();
-      splashGeom.setAttribute('position', new THREE.BufferAttribute(splashPositions, 3));
-      splashGeom.setAttribute('color', new THREE.BufferAttribute(splashColors, 3));
-
-      const splashMaterial = new THREE.PointsMaterial({
-        size: 0.22,
-        map: dropTexture,
+      const dropletMat = new THREE.MeshStandardMaterial({
+        color: 0xbae6fd,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.40,
+        roughness: 0.05,
+        metalness: 0.35,
         transparent: true,
-        vertexColors: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
+        opacity: 0.88
       });
 
-      const splashPoints = new THREE.Points(splashGeom, splashMaterial);
-      scene.add(splashPoints);
+      const dropletInst = new THREE.InstancedMesh(dropletGeo, dropletMat, MAX_DROPS);
+      dropletInst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      scene.add(dropletInst);
 
+      const dropDummy = new THREE.Object3D();
       const splashParticles = [];
-      for (let i = 0; i < MAX_SPLASH_DROPS; i++) {
+      for (let i = 0; i < MAX_DROPS; i++) {
         splashParticles.push({
           active: false,
           x: 0,
-          y: floorY,
+          y: -999,
           z: 0,
           vx: 0,
           vy: 0,
           vz: 0,
+          scale: 1,
           life: 0,
-          maxLife: 1.0,
-          gravity: 5.4
+          maxLife: 1,
+          gravity: 6.8
         });
-        splashPositions[i * 3 + 1] = -999;
+        dropDummy.position.set(0, -999, 0);
+        dropDummy.scale.set(0, 0, 0);
+        dropDummy.updateMatrix();
+        dropletInst.setMatrixAt(i, dropDummy.matrix);
       }
+      dropletInst.instanceMatrix.needsUpdate = true;
 
-      function spawnSplash(count = 25, originX = 0, originZ = 0, intensity = 1.0) {
+      // 8 World corners of the cube
+      const cubeCorners = [
+        new THREE.Vector3(-0.44, -0.44, -0.44),
+        new THREE.Vector3( 0.44, -0.44, -0.44),
+        new THREE.Vector3(-0.44,  0.44, -0.44),
+        new THREE.Vector3( 0.44,  0.44, -0.44),
+        new THREE.Vector3(-0.44, -0.44,  0.44),
+        new THREE.Vector3( 0.44, -0.44,  0.44),
+        new THREE.Vector3(-0.44,  0.44,  0.44),
+        new THREE.Vector3( 0.44,  0.44,  0.44)
+      ];
+
+      // Centrifugal spray: droplets flinging directly off rotating corners of the cube in mid-air
+      function spawnCornerSpray(count = 2, tumbleAxis = null, angularSpeed = 12.0) {
         let spawned = 0;
-        for (let i = 0; i < MAX_SPLASH_DROPS && spawned < count; i++) {
+        for (let i = 0; i < MAX_DROPS && spawned < count; i++) {
           const p = splashParticles[i];
           if (p.active) continue;
           p.active = true;
           spawned++;
-          const angle = Math.random() * Math.PI * 2;
-          const radius = 0.25 + Math.random() * 0.38;
-          p.x = originX + Math.cos(angle) * radius;
-          p.y = floorY + 0.02 + Math.random() * 0.06;
-          p.z = originZ + Math.sin(angle) * radius;
 
-          const horizSpeed = (0.55 + Math.random() * 1.25) * intensity;
-          p.vx = Math.cos(angle) * horizSpeed;
-          p.vz = Math.sin(angle) * horizSpeed;
-          p.vy = (1.8 + Math.random() * 2.4) * intensity;
-          p.maxLife = 0.75 + Math.random() * 0.50;
+          const cIdx = Math.floor(Math.random() * cubeCorners.length);
+          const cornerLocal = cubeCorners[cIdx].clone();
+          const cornerWorld = cornerLocal.clone().applyQuaternion(diceRoot.quaternion).add(diceRoot.position);
+
+          p.x = cornerWorld.x;
+          p.y = cornerWorld.y;
+          p.z = cornerWorld.z;
+
+          const r = cornerWorld.clone().sub(diceRoot.position);
+          let vTangential;
+          if (tumbleAxis) {
+            vTangential = tumbleAxis.clone().multiplyScalar(angularSpeed).cross(r);
+          } else {
+            vTangential = new THREE.Vector3(0, 1, 0).cross(r).multiplyScalar(6.0);
+          }
+
+          const rNorm = r.clone().normalize();
+          const flingSpeed = 1.1 + Math.random() * 1.5;
+
+          p.vx = vTangential.x * 0.40 + rNorm.x * flingSpeed + (Math.random() - 0.5) * 0.25;
+          p.vy = vTangential.y * 0.40 + rNorm.y * flingSpeed + 0.45 + Math.random() * 0.7;
+          p.vz = vTangential.z * 0.40 + rNorm.z * flingSpeed + (Math.random() - 0.5) * 0.25;
+
+          p.maxLife = 0.55 + Math.random() * 0.35;
           p.life = p.maxLife;
-          p.gravity = 5.2 + Math.random() * 1.2;
-
-          splashColors[i * 3] = 0.85 + Math.random() * 0.15;
-          splashColors[i * 3 + 1] = 0.95 + Math.random() * 0.05;
-          splashColors[i * 3 + 2] = 1.0;
+          p.scale = 0.75 + Math.random() * 0.55;
+          p.gravity = 6.4;
         }
-        splashGeom.attributes.color.needsUpdate = true;
+      }
+
+      // Liftoff spray: water pulled up directly off bottom edges when cube launches out of water
+      function spawnLiftoffSpray(count = 22) {
+        let spawned = 0;
+        for (let i = 0; i < MAX_DROPS && spawned < count; i++) {
+          const p = splashParticles[i];
+          if (p.active) continue;
+          p.active = true;
+          spawned++;
+
+          const angle = (spawned / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+          const r = 0.38 + Math.random() * 0.14;
+          p.x = diceRoot.position.x + Math.cos(angle) * r;
+          p.y = floorY + 0.05 + Math.random() * 0.08;
+          p.z = diceRoot.position.z + Math.sin(angle) * r;
+
+          p.vx = Math.cos(angle) * (1.2 + Math.random() * 1.1);
+          p.vy = 2.2 + Math.random() * 1.8;
+          p.vz = Math.sin(angle) * (1.2 + Math.random() * 1.1);
+
+          p.maxLife = 0.65 + Math.random() * 0.35;
+          p.life = p.maxLife;
+          p.scale = 0.8 + Math.random() * 0.6;
+          p.gravity = 6.6;
+        }
+        addWaveSource(0, 0, 0.12);
+      }
+
+      // Explosive Crown Splash fountain (around the cube's water perimeter)
+      function spawnCrownSplash(intensity = 1.0, originX = 0, originZ = 0) {
+        const num = 45;
+        let count = 0;
+        for (let i = 0; i < MAX_DROPS && count < num; i++) {
+          const p = splashParticles[i];
+          if (p.active) continue;
+          p.active = true;
+          count++;
+
+          const angle = (count / num) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+          const r = 0.36 + Math.random() * 0.16;
+          p.x = originX + Math.cos(angle) * r;
+          p.y = floorY + 0.01;
+          p.z = originZ + Math.sin(angle) * r;
+
+          const speed = (1.5 + Math.random() * 1.7) * intensity;
+          p.vx = Math.cos(angle) * speed * 0.72;
+          p.vz = Math.sin(angle) * speed * 0.72;
+          p.vy = (2.4 + Math.random() * 2.0) * intensity;
+          p.maxLife = 0.70 + Math.random() * 0.40;
+          p.life = p.maxLife;
+          p.scale = 0.8 + Math.random() * 0.65;
+          p.gravity = 6.8;
+        }
+        addWaveSource(originX, originZ, 0.13 * intensity);
       }
 
       function updateSplashes(dt) {
-        let needsUpdate = false;
-        for (let i = 0; i < MAX_SPLASH_DROPS; i++) {
+        for (let i = 0; i < MAX_DROPS; i++) {
           const p = splashParticles[i];
           if (!p.active) {
-            splashPositions[i * 3 + 1] = -999;
+            dropDummy.position.set(0, -999, 0);
+            dropDummy.scale.set(0, 0, 0);
+            dropDummy.updateMatrix();
+            dropletInst.setMatrixAt(i, dropDummy.matrix);
             continue;
           }
-          needsUpdate = true;
           p.x += p.vx * dt;
           p.z += p.vz * dt;
           p.vy -= p.gravity * dt;
           p.y += p.vy * dt;
           p.life -= dt;
 
-          const progress = Math.max(0, p.life / p.maxLife);
-          splashColors[i * 3 + 0] = progress * 0.8;
-          splashColors[i * 3 + 1] = progress * 0.95;
-          splashColors[i * 3 + 2] = progress * 1.0;
-
           if (p.y <= floorY && p.vy < 0) {
             p.active = false;
-            splashPositions[i * 3 + 1] = -999;
-            if (Math.random() < 0.55) {
-              spawnRipple(p.x, p.z, 0.45 + Math.random() * 0.35, 1.2, 0.35, 0x38bdf8);
-            }
+            addWaveSource(p.x, p.z, 0.020);
+            dropDummy.position.set(0, -999, 0);
+            dropDummy.scale.set(0, 0, 0);
+            dropDummy.updateMatrix();
+            dropletInst.setMatrixAt(i, dropDummy.matrix);
             continue;
           }
-
           if (p.life <= 0) {
             p.active = false;
-            splashPositions[i * 3 + 1] = -999;
+            dropDummy.position.set(0, -999, 0);
+            dropDummy.scale.set(0, 0, 0);
+            dropDummy.updateMatrix();
+            dropletInst.setMatrixAt(i, dropDummy.matrix);
             continue;
           }
 
-          splashPositions[i * 3] = p.x;
-          splashPositions[i * 3 + 1] = p.y;
-          splashPositions[i * 3 + 2] = p.z;
+          dropDummy.position.set(p.x, p.y, p.z);
+          const vel = new THREE.Vector3(p.vx, p.vy, p.vz);
+          const spd = vel.length();
+          if (spd > 0.01) {
+            dropDummy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), vel.clone().normalize());
+          }
+          const lifeScale = (p.life / p.maxLife) * p.scale;
+          const stretch = 1.0 + Math.min(spd * 0.22, 1.4);
+          dropDummy.scale.set(lifeScale, lifeScale * stretch, lifeScale);
+          dropDummy.updateMatrix();
+          dropletInst.setMatrixAt(i, dropDummy.matrix);
         }
-
-        if (needsUpdate) {
-          splashGeom.attributes.position.needsUpdate = true;
-          splashGeom.attributes.color.needsUpdate = true;
-        }
+        dropletInst.instanceMatrix.needsUpdate = true;
       }
 
       // ─── FLOATING MIST MOTES ───
@@ -2426,13 +2446,24 @@
         });
       }
 
+      const mistCanvas = document.createElement('canvas');
+      mistCanvas.width = 32; mistCanvas.height = 32;
+      const mctx = mistCanvas.getContext('2d');
+      const mg = mctx.createRadialGradient(16, 16, 1, 16, 16, 15);
+      mg.addColorStop(0, '#ffffff');
+      mg.addColorStop(0.4, 'rgba(56, 189, 248, 0.7)');
+      mg.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      mctx.fillStyle = mg;
+      mctx.fillRect(0, 0, 32, 32);
+      const mistTex = new THREE.CanvasTexture(mistCanvas);
+
       const mistGeom = new THREE.BufferGeometry();
       mistGeom.setAttribute('position', new THREE.BufferAttribute(mistPositions, 3));
       const mistMat = new THREE.PointsMaterial({
-        size: 0.07,
-        map: dropTexture,
+        size: 0.08,
+        map: mistTex,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.55,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         color: 0x38bdf8
@@ -2699,7 +2730,7 @@
         reflectRoot.updateMatrixWorld(true);
       }
 
-      // Continuous Silky Idle Rotation with Water Ripples
+      // Continuous Silky Idle Rotation with Physical 3D Water Waves
       const worldY = new THREE.Vector3(0, 1, 0);
       let isIdleSpinning = true;
       let lastFrameTime = performance.now();
@@ -2715,14 +2746,14 @@
           diceRoot.rotateOnWorldAxis(worldY, 0.007);
           diceRoot.position.y = 0;
 
-          // Ambient gentle water ripples in idle
-          if (now - lastIdleRippleTime > 2300) {
+          // Ambient gentle water wave pulse in idle
+          if (now - lastIdleRippleTime > 2600) {
             lastIdleRippleTime = now;
-            spawnRipple(0, 0, 2.4, 0.75, 0.32, 0x38bdf8);
+            addWaveSource(0, 0, 0.045);
           }
         }
 
-        updateRipples(dt);
+        updateWaterWaves(now);
         updateSplashes(dt);
         updateMist(now);
         updateReflection(now);
@@ -2735,11 +2766,9 @@
         roll: function (val, onComplete) {
           isIdleSpinning = false;
 
-          // Water splash and ripples erupting on roll launch
+          // 3D Water Liftoff Spray pulling up from the water
           playWaterSplashSound();
-          spawnSplash(36, 0, 0, 1.4);
-          spawnRipple(0, 0, 3.2, 1.9, 0.90, 0x38bdf8);
-          spawnRipple(0, 0, 2.2, 1.3, 0.70, 0x00f5c4);
+          spawnLiftoffSpray(26);
 
           const startQuat = diceRoot.quaternion.clone();
           const targetQuat = new THREE.Quaternion().setFromEuler(
@@ -2759,14 +2788,18 @@
             const t = Math.min((now - startTime) / duration, 1);
             const ease = 1 - Math.pow(1 - t, 4);
 
-            const jump = Math.sin(t * Math.PI) * 0.28;
+            const jump = Math.sin(t * Math.PI) * 0.32;
             diceRoot.position.y = jump;
-            sMesh.scale.set(1 - jump * 0.45, 1 - jump * 0.45, 1);
-            sMesh.material.opacity = 0.90 - jump * 0.55;
 
             const remainingSpins = (1 - ease) * Math.PI * 6;
             const tumbleQuat = new THREE.Quaternion().setFromAxisAngle(tumbleAxis, remainingSpins);
             diceRoot.quaternion.copy(startQuat).slerp(targetQuat, ease).multiply(tumbleQuat);
+
+            // Centrifugal droplets flinging DIRECTLY off spinning cube corners!
+            if (t > 0.04 && t < 0.86) {
+              const currentAngularSpeed = (1 - ease) * 18.0 + 3.0;
+              spawnCornerSpray(2, tumbleAxis, currentAngularSpeed);
+            }
 
             updateReflection(now);
 
@@ -2775,15 +2808,11 @@
             } else {
               diceRoot.position.y = 0;
               diceRoot.quaternion.copy(targetQuat);
-              sMesh.scale.set(1, 1, 1);
-              sMesh.material.opacity = 0.88;
               updateReflection(now);
 
-              // Water splash and wave rings upon landing back in the water
+              // 3D Water Crown Splash and massive wave upon landing back into water
               playWaterSplashSound();
-              spawnSplash(30, 0, 0, 1.15);
-              spawnRipple(0, 0, 3.0, 1.7, 0.85, 0x38bdf8);
-              spawnRipple(0, 0, 1.9, 1.1, 0.65, 0x60a5fa);
+              spawnCrownSplash(1.4, 0, 0);
 
               if (onComplete) onComplete();
 
@@ -2814,8 +2843,7 @@
             rollDice();
           } else {
             playWaterSplashSound();
-            spawnSplash(16, hitPoint.x, hitPoint.z, 0.75);
-            spawnRipple(hitPoint.x, hitPoint.z, 1.8, 1.3, 0.65, 0x38bdf8);
+            spawnCrownSplash(0.75, hitPoint.x, hitPoint.z);
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
               window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
             }

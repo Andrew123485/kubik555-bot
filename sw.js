@@ -1,5 +1,5 @@
-// Service Worker for Offline PWA Support (v36 — Water Lagoon & 3D Splashes)
-const CACHE_NAME = 'dice-oracle-v36';
+// Service Worker for Offline PWA Support (v37 — True 3D Water & Corner Centrifugal Spray)
+const CACHE_NAME = 'dice-oracle-v37';
 const ASSETS = [
   './',
   './index.html',
