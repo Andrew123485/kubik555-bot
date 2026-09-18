@@ -1,0 +1,3274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#06080d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Кубик">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <title>Кубик — Аналитика и принятие решений</title>
+
+  <!-- Typography: Luxury Editorial & Clean Mono (designmd.supply & checklist.design style) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- High-Performance Solid 3D Engine for Telegram-like Rounded Die -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="three.min.js"></script>
+  <script src="GLTFLoader.js"></script>
+
+  <style>
+    :root {
+      --bg-deep: #06080d;
+      --bg-surface: #0c101a;
+      --bg-card: rgba(13, 17, 28, 0.82);
+      --bg-card-hover: rgba(18, 24, 40, 0.92);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-bright: rgba(255, 255, 255, 0.16);
+      --border-focus: #6366f1;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-yes: #10b981;
+      --accent-yes-glow: rgba(16, 185, 129, 0.3);
+      --accent-no: #f43f5e;
+      --accent-no-glow: rgba(244, 63, 94, 0.3);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.35);
+      --amber: #f59e0b;
+      --font-serif: "Instrument Serif", Georgia, serif;
+      --font-sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --dice-size: 128px;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      color-scheme: dark;
+    }
+
+    html, body {
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      min-height: 100svh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    ::selection {
+      background: rgba(34, 240, 216, 0.35);
+      color: #fff;
+    }
+
+    /* Ambient atmospheric lighting in app icon's neon aesthetic */
+    .ambient-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: 
+        radial-gradient(circle at 12% 15%, rgba(192, 38, 211, 0.16) 0%, transparent 48%),
+        radial-gradient(circle at 88% 30%, rgba(16, 185, 129, 0.13) 0%, transparent 50%),
+        radial-gradient(circle at 50% 85%, rgba(99, 102, 241, 0.12) 0%, transparent 55%);
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+      /* Full iOS safe area support so Dynamic Island / notch and Home Bar never overlap content */
+      padding: max(18px, env(safe-area-inset-top) + 10px) max(14px, env(safe-area-inset-right)) max(42px, env(safe-area-inset-bottom) + 30px) max(14px, env(safe-area-inset-left));
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       HEADER & NAVIGATION
+       ═════════════════════════════════════════════════════════════════ */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-cube-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.45), 0 0 16px rgba(16, 185, 129, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+      background: #0d121f;
+    }
+
+    .brand-cube-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .brand-sub {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-header {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+      white-space: nowrap;
+    }
+
+    .btn-header:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--border-bright);
+    }
+
+    .btn-header:active {
+      transform: scale(0.96);
+    }
+
+    .btn-header.danger:hover {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+
+    /* Mobile responsive header: keep buttons icon-only so nothing overflows or clips */
+    @media (max-width: 520px) {
+      header {
+        padding: 10px 14px;
+      }
+      .brand-title {
+        font-size: 0.96rem;
+      }
+      .brand-sub {
+        display: none;
+      }
+      .header-actions {
+        gap: 6px;
+      }
+      .btn-header {
+        padding: 7px 10px;
+        font-size: 0.85rem;
+      }
+      .btn-header span:last-child {
+        display: none;
+      }
+    }
+
+    /* Modern Compact Navigation Tabs (Single line, no multi-line wrapping) */
+    .nav-tabs {
+      display: flex;
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-tab-btn {
+      flex: 1;
+      padding: 9px 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition-property: background-color, color, box-shadow;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .nav-tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .nav-tab-btn.active {
+      background: rgba(255, 255, 255, 0.11);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Sticky tabs container: docks right under iOS status bar when scrolling */
+    .nav-tabs-sticky {
+      position: sticky;
+      top: max(14px, env(safe-area-inset-top) + 6px);
+      z-index: 100;
+      padding: 3px 0 6px;
+      margin: -2px 0 2px;
+      background: rgba(6, 8, 13, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-md);
+    }
+
+    /* Fixed iOS status-bar protection blur shield (stops content from clashing with clock and battery on scroll) */
+    .ios-status-bar-shield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(20px, env(safe-area-inset-top));
+      background: rgba(6, 8, 13, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       STAGE: 3D REALISTIC SOLID CERAMIC DIE (TELEGRAM STYLE)
+       ═════════════════════════════════════════════════════════════════ */
+    .stage-card {
+      background: #05060c;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 28px;
+      padding: 8px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stage-card::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 320px;
+      height: 140px;
+      background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.22) 0%, rgba(16, 185, 129, 0.12) 50%, transparent 75%);
+      pointer-events: none;
+    }
+
+    /* Ambient warm bokeh particles matching reference media_1789685450843.png */
+    .stage-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 11% 82%, rgba(255,255,255,0.55) 0 1.2px, transparent 2.4px),
+        radial-gradient(circle at 7% 36%, rgba(255,255,255,0.35) 0 1px, transparent 2px),
+        radial-gradient(circle at 88% 22%, rgba(232,121,249,0.45) 0 1.4px, transparent 3px),
+        radial-gradient(circle at 92% 74%, rgba(34,240,216,0.4) 0 1.2px, transparent 2.6px),
+        radial-gradient(circle at 18% 18%, rgba(255,255,255,0.28) 0 1px, transparent 2px);
+      pointer-events: none;
+      border-radius: 28px;
+    }
+
+    .dice-3d-wrap {
+      width: 100%;
+      max-width: 480px;
+      height: 290px;
+      margin: 0 auto 6px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    #diceCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      touch-action: none;
+    }
+
+    @media (max-width: 520px) {
+      .dice-3d-wrap {
+        height: 270px;
+      }
+    }
+
+    .verdict-box {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .verdict-pill {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 18px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition-property: background-color, border-color, color, box-shadow;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .verdict-pill.yes {
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #34d399;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.3);
+    }
+
+    .verdict-pill.no {
+      background: rgba(244, 63, 94, 0.14);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fb7185;
+      box-shadow: 0 0 24px rgba(244, 63, 94, 0.3);
+    }
+
+    /* Luxury Neon Roll Button */
+    .btn-roll-main {
+      width: 100%;
+      max-width: 320px;
+      min-height: 52px;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #06b6d4 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-md);
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 10px 28px rgba(124, 58, 237, 0.4), 0 0 20px rgba(6, 182, 212, 0.25);
+      transition-property: transform, box-shadow, filter;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+      text-transform: uppercase;
+    }
+
+    .btn-roll-main:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 14px 36px rgba(124, 58, 237, 0.55), 0 0 25px rgba(6, 182, 212, 0.35);
+    }
+
+    .btn-roll-main:active {
+      transform: scale(0.96);
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       CARD SECTION & INPUTS
+       ═════════════════════════════════════════════════════════════════ */
+    .card-section {
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .section-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .q-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 13px 16px;
+      font-size: 0.95rem;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+      transition-property: border-color, background-color, box-shadow;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .q-input:focus {
+      border-color: var(--border-focus);
+      background: rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .q-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .tags-strip {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .tag-chip {
+      font-size: 0.74rem;
+      padding: 5px 11px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+      transition-property: background-color, border-color, color;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .tag-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .tag-chip.active {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: #c7d2fe;
+    }
+
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    .choices-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .choices-row.four-cols {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .choice-pill {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 10px 8px;
+      cursor: pointer;
+      text-align: center;
+      transition-property: background-color, border-color, color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .choice-pill:active {
+      transform: scale(0.96);
+    }
+
+    .choices-row.four-cols .choice-pill {
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 3px;
+      min-height: 54px;
+      white-space: nowrap;
+    }
+
+    .choice-emoji {
+      font-size: 1.22rem;
+      line-height: 1;
+      display: block;
+    }
+
+    .choice-text {
+      font-size: 0.72rem;
+      font-weight: 600;
+      line-height: 1.15;
+      display: block;
+    }
+
+    .choice-pill:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+
+    .choice-pill.active {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .choice-pill.active.yes {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+
+    .choice-pill.active.no {
+      background: rgba(244, 63, 94, 0.16);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fb7185;
+    }
+
+    .choice-pill.active.neutral {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fbbf24;
+    }
+
+    .choice-pill.active.pleased {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+
+    .choice-pill.active.neutral-outcome {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fbbf24;
+    }
+
+    .choice-pill.active.regret {
+      background: rgba(244, 63, 94, 0.16);
+      border-color: rgba(244, 63, 94, 0.45);
+      color: #fb7185;
+    }
+
+    .choice-pill.active.unknown {
+      background: rgba(148, 163, 184, 0.16);
+      border-color: rgba(148, 163, 184, 0.45);
+      color: #cbd5e1;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      min-height: 74px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      font-size: 0.88rem;
+      color: #fff;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition-property: border-color, background-color, box-shadow;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .notes-textarea:focus {
+      border-color: var(--border-focus);
+      background: rgba(0, 0, 0, 0.45);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .notes-textarea::placeholder {
+      color: var(--text-dim);
+    }
+
+    .btn-save-record {
+      width: 100%;
+      padding: 13px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition-property: background-color, border-color, transform;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .btn-save-record:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-save-record:active {
+      transform: scale(0.96);
+    }
+
+    .after-roll {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .after-roll > summary {
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0 8px;
+    }
+
+    .after-roll > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .after-roll > summary::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg);
+      transition-property: transform;
+      transition-duration: 150ms;
+      transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    .after-roll[open] > summary::after {
+      transform: rotate(225deg);
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       PROFESSIONAL ANALYTICS DASHBOARD (LINEAR / STRIPE STYLE)
+       ═════════════════════════════════════════════════════════════════ */
+    .analytics-section {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* KPI Summary Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2.5px;
+      background: var(--kpi-accent, var(--primary));
+    }
+
+    .kpi-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 700px) {
+      .charts-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .chart-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chart-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-donut-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 8px 0;
+    }
+
+    #donutVerdictContainer, #donutOutcomeContainer {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 0.78rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-count {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #fff;
+      margin-left: auto;
+    }
+
+    /* Correlation Matrix ("Где положительно сбывается") */
+    .matrix-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .matrix-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .matrix-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .matrix-bar-track {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 9999px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .matrix-bar-seg {
+      height: 100%;
+      transition: width 0.6s var(--ease);
+    }
+
+    .matrix-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+
+    @media (min-width: 480px) {
+      .matrix-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    /* Category Ranking Bars */
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cat-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.8rem;
+    }
+
+    .cat-name {
+      flex: 0 0 155px;
+      max-width: 170px;
+      color: var(--text-main);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cat-bar-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      border-radius: 4px;
+      transition: width 0.6s var(--ease);
+    }
+
+    .cat-rate {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.78rem;
+      width: 44px;
+      text-align: right;
+      color: #34d399;
+    }
+
+    /* AI Psychological Insight Box */
+    .insight-card {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.45) 0%, rgba(15, 23, 42, 0.7) 100%);
+      border: 1px solid rgba(129, 140, 248, 0.3);
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .insight-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #c7d2fe;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .insight-text {
+      font-size: 0.84rem;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       AI BANNER
+       ═════════════════════════════════════════════════════════════════ */
+    .ai-banner {
+      background: linear-gradient(135deg, rgba(88, 28, 135, 0.2) 0%, rgba(30, 27, 75, 0.4) 100%);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .ai-banner-text {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .ai-banner-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #e9d5ff;
+      margin-bottom: 3px;
+    }
+
+    .ai-banner-desc {
+      font-size: 0.78rem;
+      color: #c084fc;
+      line-height: 1.4;
+    }
+
+    .btn-ai-copy {
+      background: #9333ea;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(147, 51, 234, 0.4);
+      transition: all 0.2s var(--ease);
+    }
+
+    .btn-ai-copy:hover {
+      background: #a855f7;
+      transform: translateY(-1px);
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       HISTORY LOG
+       ═════════════════════════════════════════════════════════════════ */
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .history-filter-tabs {
+      display: flex;
+      gap: 5px;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-dim);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s var(--ease);
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--border-bright);
+      color: #fff;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .history-entry {
+      background: rgba(0, 0, 0, 0.24);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s var(--ease);
+    }
+
+    .history-entry:hover {
+      border-color: var(--border-bright);
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .entry-top-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .entry-badge {
+      min-width: 38px;
+      height: 30px;
+      padding: 0 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+
+    .entry-badge.even {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .entry-badge.odd {
+      background: rgba(244, 63, 94, 0.18);
+      color: #fb7185;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+
+    .entry-q {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+    }
+
+    .entry-meta-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .entry-notes-box {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 2px solid var(--primary);
+      padding: 6px 12px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      line-height: 1.4;
+    }
+
+    .entry-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+      color: var(--text-dim);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 8px;
+    }
+
+    .btn-action-text {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .btn-action-text:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-action-text.del:hover {
+      color: #fb7185;
+      background: rgba(244, 63, 94, 0.12);
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       MODALS
+       ═════════════════════════════════════════════════════════════════ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s var(--ease);
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #0c101c;
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transform: scale(0.95);
+      transition: transform 0.25s var(--ease);
+    }
+
+    .modal-backdrop.open .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .modal-desc {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .btn-modal {
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.18s;
+    }
+
+    .btn-modal.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .btn-modal.secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .btn-modal.danger {
+      background: #e11d48;
+      color: #fff;
+    }
+
+    .btn-modal.danger:hover {
+      background: #f43f5e;
+    }
+
+    .btn-modal.primary {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .btn-modal.primary:hover {
+      background: #4f46e5;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(40px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s var(--ease);
+      z-index: 2000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* iOS Home Screen Install Helper Banner */
+    .ios-install-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(16, 185, 129, 0.12) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .ios-banner-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+
+    .ios-banner-content {
+      flex: 1;
+    }
+
+    .ios-banner-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .ios-banner-desc {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .ios-banner-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .ios-banner-close:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+    }
+  </style>
+</head>
+<body>
+  <div class="ios-status-bar-shield"></div>
+  <div class="ambient-glow"></div>
+
+  <div class="app-container">
+
+    <!-- HEADER -->
+    <header>
+      <div class="header-brand">
+        <div class="brand-cube-icon">
+          <img src="apple-touch-icon.png" alt="Кубик">
+        </div>
+        <div>
+          <div class="brand-title">Кубик Решений</div>
+          <div class="brand-sub">Оракул решений</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-header" id="btnSyncNow" title="Обновить приложение и сбросить кэш" onclick="forceAppUpdateAndSync()">
+          <span>🔄</span>
+          <span>Обновить</span>
+        </button>
+        <button class="btn-header" id="btnExportJson" title="Экспорт всей базы решений">
+          <span>💾</span>
+          <span>Экспорт</span>
+        </button>
+        <button class="btn-header danger" id="btnResetHistory" title="Полное обнуление истории">
+          <span>🗑️</span>
+          <span>Обнулить</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- NAVIGATION TABS (Sticky under iOS status bar, single-line) -->
+    <div class="nav-tabs-sticky">
+      <nav class="nav-tabs">
+        <button class="nav-tab-btn active" id="tabNavDecision" onclick="switchView('decision')">
+          <span>🎲</span>
+          <span>Жребий</span>
+        </button>
+        <button class="nav-tab-btn" id="tabNavAnalytics" onclick="switchView('analytics')">
+          <span>📊</span>
+          <span>Аналитика</span>
+        </button>
+        <button class="nav-tab-btn" id="tabNavHistory" onclick="switchView('history')">
+          <span>📜</span>
+          <span>Летопись (<span id="navCount">0</span>)</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- iOS PWA Home Screen Helper Banner -->
+    <div id="iosPwaBanner" class="ios-install-banner" style="display: none;">
+      <div class="ios-banner-icon">📲</div>
+      <div class="ios-banner-content">
+        <div class="ios-banner-title">Добавить как приложение на экран «Домой»</div>
+        <div class="ios-banner-desc">В Safari нажмите <b>«Поделиться»</b> (квадрат со стрелкой ⎋) и выберите <b>«На экран "Домой"»</b>. Приложение будет работать всегда и без интернета!</div>
+      </div>
+      <button class="ios-banner-close" onclick="dismissIosBanner()" title="Закрыть">✕</button>
+    </div>
+
+    <!-- =============================================================
+         VIEW 1: DECISION & 3D STAGE
+         ============================================================= -->
+    <div id="viewDecision" style="display: flex; flex-direction: column; gap: 20px;">
+      <!-- MAIN STAGE: 3D REALISTIC SOLID CERAMIC DIE (TELEGRAM STYLE) -->
+      <section class="stage-card">
+        <div class="dice-3d-wrap" id="dice3dWrap" title="Нажми, чтобы бросить кубик">
+          <canvas id="diceCanvas"></canvas>
+        </div>
+
+        <div class="verdict-box">
+          <div class="verdict-pill" id="verdictPill">
+            <span id="verdictPillText">Жребий</span>
+          </div>
+        </div>
+
+        <button class="btn-roll-main" id="btnRoll">
+          <span>Бросить кубик</span>
+        </button>
+      </section>
+
+      <!-- DECISION INPUT & DETAILS CARD -->
+      <section class="card-section">
+        <div class="section-title">
+          <span>Вопрос</span>
+        </div>
+
+        <div>
+          <input 
+            type="text" 
+            id="questionInput" 
+            class="q-input" 
+            placeholder="В чём сомнение?" 
+            autocomplete="off"
+          >
+          <div class="tags-strip" id="tagsStrip" style="margin-top: 10px;">
+            <span class="tag-chip" data-cat="Отношения и семья">Семья</span>
+            <span class="tag-chip" data-cat="Покупки и деньги">Покупки</span>
+            <span class="tag-chip" data-cat="Работа и карьера">Работа</span>
+            <span class="tag-chip" data-cat="Здоровье и спорт">Здоровье</span>
+            <span class="tag-chip" data-cat="Быт и рутина">Быт</span>
+            <span class="tag-chip" data-cat="Спонтанность">Спонтанность</span>
+            <span class="tag-chip" data-cat="Общее">Общее</span>
+          </div>
+        </div>
+
+        <details class="after-roll">
+          <summary>После броска</summary>
+          <div>
+            <div class="field-label">Ты последовал ответу кубика?</div>
+            <div class="choices-row" id="choiceFollowed">
+              <button type="button" class="choice-pill active yes" data-val="followed">Послушался</button>
+              <button type="button" class="choice-pill no" data-val="defied">Наоборот</button>
+              <button type="button" class="choice-pill neutral" data-val="pending">Думаю</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="field-label">Оценка исхода</div>
+            <div class="choices-row four-cols" id="choiceOutcome">
+              <button type="button" class="choice-pill pleased" data-val="pleased">
+                <span class="choice-text">Доволен</span>
+              </button>
+              <button type="button" class="choice-pill neutral-outcome" data-val="neutral">
+                <span class="choice-text">Нормально</span>
+              </button>
+              <button type="button" class="choice-pill regret" data-val="regret">
+                <span class="choice-text">Пожалел</span>
+              </button>
+              <button type="button" class="choice-pill active unknown" data-val="unknown">
+                <span class="choice-text">Не ясно</span>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <div class="field-label">Заметки</div>
+            <textarea 
+              id="notesInput" 
+              class="notes-textarea" 
+              placeholder="К чему привело решение?"
+            ></textarea>
+          </div>
+        </details>
+
+        <button class="btn-save-record" id="btnSaveRecord">
+          <span>Записать в историю</span>
+        </button>
+      </section>
+    </div>
+
+    <!-- =============================================================
+         VIEW 2: PROFESSIONAL ANALYTICS & INSIGHTS (LINEAR STYLE)
+         ============================================================= -->
+    <div id="viewAnalytics" class="analytics-section" style="display: none;">
+      
+      <!-- Executive Summary KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-accent: #6366f1;">
+          <span class="kpi-label">Всего решений</span>
+          <span class="kpi-value" id="kpiTotal">0</span>
+          <span class="kpi-sub">За всё время</span>
+        </div>
+        <div class="kpi-card" style="--kpi-accent: #10b981;">
+          <span class="kpi-label">Баланс вердиктов</span>
+          <span class="kpi-value" id="kpiRatio">0 / 0</span>
+          <span class="kpi-sub" id="kpiRatioSub">Чёт (ДА) vs Нечет</span>
+        </div>
+        <div class="kpi-card" style="--kpi-accent: #3b82f6;">
+          <span class="kpi-label">Доверие жребию</span>
+          <span class="kpi-value" id="kpiFollowRate">0%</span>
+          <span class="kpi-sub" id="kpiFollowSub">Послушался кубика</span>
+        </div>
+        <div class="kpi-card" style="--kpi-accent: #10b981;">
+          <span class="kpi-label">Положительно сбылось</span>
+          <span class="kpi-value" id="kpiPleasedRate">0%</span>
+          <span class="kpi-sub" id="kpiPleasedSub">Индекс «Доволен»</span>
+        </div>
+      </div>
+
+      <!-- Charts 2-Column Grid -->
+      <div class="charts-grid">
+        
+        <!-- Chart 1: Verdict Distribution Donut -->
+        <div class="chart-box">
+          <div class="chart-header">
+            <div class="chart-title">
+              <span>🟢</span>
+              <span>Баланс вердиктов (ДА vs НЕТ)</span>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">КУБИК</span>
+          </div>
+
+          <div class="chart-donut-wrap">
+            <div id="donutVerdictContainer">
+              <!-- SVG Donut rendered by JS -->
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-yes);"></span>
+                <span>Чётное (ДА)</span>
+                <span class="legend-count" id="legendYesCount">0 (0%)</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: var(--accent-no);"></span>
+                <span>Нечётное (НЕТ)</span>
+                <span class="legend-count" id="legendNoCount">0 (0%)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 2: Outcome Emotions Breakdown -->
+        <div class="chart-box">
+          <div class="chart-header">
+            <div class="chart-title">
+              <span>✨</span>
+              <span>Оценка исходов (Ощущения)</span>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">РЕЗУЛЬТАТ</span>
+          </div>
+
+          <div class="chart-donut-wrap">
+            <div id="donutOutcomeContainer">
+              <!-- SVG Donut rendered by JS -->
+            </div>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background: #10b981;"></span>
+                <span>Доволен</span>
+                <span class="legend-count" id="legendPleased">0</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: #f59e0b;"></span>
+                <span>Нормально</span>
+                <span class="legend-count" id="legendNeutral">0</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: #f43f5e;"></span>
+                <span>Пожалел</span>
+                <span class="legend-count" id="legendRegret">0</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background: #64748b;"></span>
+                <span>Не ясно</span>
+                <span class="legend-count" id="legendUnknown">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- KEY INSIGHT: "ГДЕ ПОЛОЖИТЕЛЬНО СБЫВАЕТСЯ" (Матрица доверия и успеха) -->
+      <div class="chart-box">
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>🎯</span>
+            <span>Матрица сбываемости: Послушался vs Сделал вопреки</span>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">КОРРЕЛЯЦИЯ</span>
+        </div>
+
+        <div class="matrix-container">
+          <!-- When followed die -->
+          <div class="matrix-card">
+            <div class="matrix-header">
+              <span style="color: #34d399;">🟢 Послушался кубика:</span>
+              <span id="matrixFollowedRate" style="font-family: var(--font-mono); font-weight: 700; color: #fff;">0% доволен</span>
+            </div>
+            <div class="matrix-bar-track">
+              <div id="barFollowedPleased" class="matrix-bar-seg" style="background: #10b981; width: 0%;"></div>
+              <div id="barFollowedNeutral" class="matrix-bar-seg" style="background: #f59e0b; width: 0%;"></div>
+              <div id="barFollowedRegret" class="matrix-bar-seg" style="background: #f43f5e; width: 0%;"></div>
+            </div>
+            <div class="matrix-footer">
+              <span id="matrixFollowedDetail">Всего: 0</span>
+              <span>Зеленый = Доволен • Красный = Пожалел</span>
+            </div>
+          </div>
+
+          <!-- When defied die -->
+          <div class="matrix-card">
+            <div class="matrix-header">
+              <span style="color: #fb7185;">🔴 Пошёл вопреки кубику:</span>
+              <span id="matrixDefiedRate" style="font-family: var(--font-mono); font-weight: 700; color: #fff;">0% доволен</span>
+            </div>
+            <div class="matrix-bar-track">
+              <div id="barDefiedPleased" class="matrix-bar-seg" style="background: #10b981; width: 0%;"></div>
+              <div id="barDefiedNeutral" class="matrix-bar-seg" style="background: #f59e0b; width: 0%;"></div>
+              <div id="barDefiedRegret" class="matrix-bar-seg" style="background: #f43f5e; width: 0%;"></div>
+            </div>
+            <div class="matrix-footer">
+              <span id="matrixDefiedDetail">Всего: 0</span>
+              <span>Сравнение вашей интуиции со жребием</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Performance Ranking -->
+      <div class="chart-box">
+        <div class="chart-header">
+          <div class="chart-title">
+            <span>🏆</span>
+            <span>Рейтинг сфер: где решения приносят больше всего удовлетворения</span>
+          </div>
+          <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">КАТЕГОРИИ</span>
+        </div>
+
+        <div class="category-list" id="categoryRankingList">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- AI Psychological Insight Card -->
+      <div class="insight-card">
+        <div class="insight-title">
+          <span>🧠</span>
+          <span>Психологический авто-анализ</span>
+        </div>
+        <div class="insight-text" id="psychologicalInsightText">
+          Сделайте первые несколько решений, чтобы алгоритм рассчитал ваш паттерн сомнений, доверие случайности и зоны наивысшей успешности.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =============================================================
+         VIEW 3: HISTORY & PERSISTENCE
+         ============================================================= -->
+    <div id="viewHistory" style="display: none; flex-direction: column; gap: 20px;">
+      <!-- AI AGENT ANALYSIS BANNER -->
+      <div class="ai-banner">
+        <div class="ai-banner-text">
+          <div class="ai-banner-title">✨ Разбор решений с ИИ-агентом</div>
+          <div class="ai-banner-desc">Скопируй структурированную статистику исходов и вставь в наш чат для глубокого психологического разбора.</div>
+        </div>
+        <button class="btn-ai-copy" id="btnAiCopy">
+          📋 Скопировать для ИИ
+        </button>
+      </div>
+
+      <!-- HISTORY LOG -->
+      <section class="card-section">
+        <div class="history-header">
+          <div class="section-title" style="margin-bottom: 0;">
+            <span>История решений (<span id="historyCount">0</span>)</span>
+          </div>
+          <div class="history-filter-tabs">
+            <button class="tab-btn active" data-filter="all">Все</button>
+            <button class="tab-btn" data-filter="yes">Чётное</button>
+            <button class="tab-btn" data-filter="no">Нечётное</button>
+            <button class="tab-btn" data-filter="notes">С заметками</button>
+          </div>
+        </div>
+
+        <div class="history-list" id="historyList">
+          <!-- Records rendered by JS -->
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- EDIT RECORD MODAL -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal-box">
+      <div class="modal-title" id="editModalTitle">Редактировать решение</div>
+
+      <div>
+        <div class="field-label">Действие:</div>
+        <div class="choices-row" id="modalChoiceFollowed">
+          <button type="button" class="choice-pill yes" data-val="followed">Послушался</button>
+          <button type="button" class="choice-pill no" data-val="defied">Наоборот</button>
+          <button type="button" class="choice-pill neutral" data-val="pending">Думаю</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label">Оценка исхода / Ощущения:</div>
+        <div class="choices-row four-cols" id="modalChoiceOutcome">
+          <button type="button" class="choice-pill pleased" data-val="pleased">
+            <span class="choice-emoji">😊</span>
+            <span class="choice-text">Доволен</span>
+          </button>
+          <button type="button" class="choice-pill neutral-outcome" data-val="neutral">
+            <span class="choice-emoji">😐</span>
+            <span class="choice-text">Нормально</span>
+          </button>
+          <button type="button" class="choice-pill regret" data-val="regret">
+            <span class="choice-emoji">😞</span>
+            <span class="choice-text">Пожалел</span>
+          </button>
+          <button type="button" class="choice-pill unknown" data-val="unknown">
+            <span class="choice-emoji">❓</span>
+            <span class="choice-text">Не ясно</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="field-label">Последствия и заметки:</div>
+        <textarea id="modalNotes" class="notes-textarea" rows="3" placeholder="Что произошло спустя время?"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-modal secondary" id="btnCancelEdit">Отмена</button>
+        <button class="btn-modal primary" id="btnSaveEdit">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESET CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="resetModal">
+    <div class="modal-box">
+      <div class="modal-title">⚠️ Обнуление всей истории</div>
+      <div class="modal-desc">
+        Вы действительно хотите полностью очистить историю решений? Это действие удалит все записи из памяти браузера и базы бота.
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal secondary" id="btnCancelReset">Отмена</button>
+        <button class="btn-modal danger" id="btnConfirmReset">Да, обнулить всё</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toastBox">
+    <span id="toastMsg">Уведомление</span>
+  </div>
+
+  <script>
+    const CANONICAL_CATEGORIES = [
+      { name: 'Отношения и семья', short: 'Семья', icon: '❤️' },
+      { name: 'Покупки и деньги', short: 'Покупки', icon: '💳' },
+      { name: 'Работа и карьера', short: 'Работа', icon: '💼' },
+      { name: 'Здоровье и спорт', short: 'Здоровье', icon: '🍏' },
+      { name: 'Быт и рутина', short: 'Быт', icon: '🏠' },
+      { name: 'Спонтанность', short: 'Спонтанность', icon: '⚡' },
+      { name: 'Общее', short: 'Общее', icon: '🔮' }
+    ];
+
+    function normalizeCategory(cat) {
+      if (!cat) return 'Общее';
+      const l = String(cat).toLowerCase();
+      if (l.includes('семь') || l.includes('отношен')) return 'Отношения и семья';
+      if (l.includes('покупк') || l.includes('деньг')) return 'Покупки и деньги';
+      if (l.includes('работ') || l.includes('дел') || l.includes('карьер')) return 'Работа и карьера';
+      if (l.includes('здоров') || l.includes('спорт')) return 'Здоровье и спорт';
+      if (l.includes('быт') || l.includes('рутин')) return 'Быт и рутина';
+      if (l.includes('спонтан')) return 'Спонтанность';
+      return 'Общее';
+    }
+
+    function detectCategory(q) {
+      if (!q || q === 'Решение по жребию') return 'Спонтанность';
+      const l = q.toLowerCase();
+      if (l.match(/купить|купил|купи|покуп|цена|руб|доллар|деньг|акци|бизнес|доход|трат/i)) return 'Покупки и деньги';
+      if (l.match(/работ|проект|начальник|клиент|коллег|ваканси|собесед|резюме|оффер|задач/i)) return 'Работа и карьера';
+      if (l.match(/девушк|парен|отношен|любов|семь|мама|папа|друг|подруг|написат|позвонит|встрет/i)) return 'Отношения и семья';
+      if (l.match(/спорт|зал|трениров|здоров|бег|врач|еда|питани|диет|сон|спать/i)) return 'Здоровье и спорт';
+      if (l.match(/уборк|помыт|квартир|быт|готовк|ремонт|магазин|дом|ужин/i)) return 'Быт и рутина';
+      return 'Общее';
+    }
+
+    let records = [];
+    let isRolling = false;
+    let lastRoll = null;
+    let currentRotX = 0;
+    let currentRotY = 0;
+    let selectedCategory = '';
+    let selectedFollowed = 'followed';
+    let selectedOutcome = 'unknown';
+    let currentFilter = 'all';
+    let currentEditingId = null;
+    let currentView = 'decision';
+
+    // Switch Top Views
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('tabNavDecision').classList.toggle('active', view === 'decision');
+      document.getElementById('tabNavAnalytics').classList.toggle('active', view === 'analytics');
+      document.getElementById('tabNavHistory').classList.toggle('active', view === 'history');
+
+      document.getElementById('viewDecision').style.display = view === 'decision' ? 'flex' : 'none';
+      document.getElementById('viewAnalytics').style.display = view === 'analytics' ? 'flex' : 'none';
+      document.getElementById('viewHistory').style.display = view === 'history' ? 'flex' : 'none';
+
+      if (view === 'analytics') {
+        renderAnalytics();
+      } else if (view === 'history') {
+        renderHistory();
+      }
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       MULTI-USER DATA ISOLATION & PER-USER SYNCHRONIZATION
+       ═════════════════════════════════════════════════════════════════ */
+    function getCurrentUserId() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uParam = urlParams.get('u') || urlParams.get('user');
+        if (uParam) {
+          localStorage.setItem('dice_user_id', String(uParam));
+          return String(uParam);
+        }
+      } catch (e) {}
+
+      try {
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+          const tgId = String(window.Telegram.WebApp.initDataUnsafe.user.id);
+          if (tgId) {
+            localStorage.setItem('dice_user_id', tgId);
+            return tgId;
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const cached = localStorage.getItem('dice_user_id');
+        if (cached) return cached;
+      } catch (e) {}
+
+      try {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          localStorage.setItem('dice_user_id', '576401462');
+          return '576401462';
+        }
+      } catch (e) {}
+
+      const anonId = 'usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+      try {
+        localStorage.setItem('dice_user_id', anonId);
+      } catch (e) {}
+      return anonId;
+    }
+
+    const currentUserId = getCurrentUserId();
+    const STORAGE_KEY = 'oracle_dice_records_v4_' + currentUserId;
+    const DELETED_KEY = 'oracle_dice_deleted_ids_v4_' + currentUserId;
+    const DEFAULT_SEED_RECORDS = [];
+
+    let deletedIds = new Set();
+    try {
+      const dRaw = localStorage.getItem(DELETED_KEY);
+      if (dRaw) {
+        const arr = JSON.parse(dRaw);
+        if (Array.isArray(arr)) deletedIds = new Set(arr);
+      }
+    } catch (e) {}
+
+    function saveDeletedIds() {
+      try {
+        localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(deletedIds)));
+      } catch (e) {}
+    }
+
+    function loadRecordsSafely() {
+      const map = new Map();
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(r => {
+              if (r && r.id && !deletedIds.has(r.id)) map.set(r.id, r);
+            });
+          }
+        } else if (currentUserId === '576401462') {
+          // Migration for Andrey from older keys
+          const oldRaw = localStorage.getItem('oracle_dice_records_v3') || localStorage.getItem('oracle_dice_records_v2');
+          if (oldRaw) {
+            const parsed = JSON.parse(oldRaw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(r => {
+                if (r && r.id && !deletedIds.has(r.id)) {
+                  r.chatId = '576401462';
+                  map.set(r.id, r);
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {}
+
+      const res = Array.from(map.values()).filter(r => !deletedIds.has(r.id));
+      res.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return res;
+    }
+
+    records = loadRecordsSafely();
+    persist();
+
+    // Bi-directional multi-device sync scoped to currentUserId
+    function fetchRemoteHistory(showToastFeedback = false) {
+      fetch('/api/history/sync?u=' + encodeURIComponent(currentUserId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUserId,
+          records: records,
+          deletedIds: Array.from(deletedIds)
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.ok && Array.isArray(data.records)) {
+            const map = new Map();
+            data.records.forEach(item => {
+              if (item && item.id && !deletedIds.has(item.id)) {
+                map.set(item.id, item);
+              }
+            });
+            records.forEach(localItem => {
+              if (localItem && localItem.id && !deletedIds.has(localItem.id)) {
+                if (!map.has(localItem.id)) map.set(localItem.id, localItem);
+              }
+            });
+            records = Array.from(map.values()).filter(r => !deletedIds.has(r.id));
+            records.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            persist();
+            renderHistory();
+            renderAnalytics();
+            if (showToastFeedback) showToast('🔄 Данные синхронизированы!');
+          }
+        })
+        .catch(() => {
+          fetch('/api/history?u=' + encodeURIComponent(currentUserId))
+            .then(res => res.json())
+            .then(data => {
+              if (Array.isArray(data)) {
+                const map = new Map();
+                records.forEach(r => {
+                  if (r && r.id && !deletedIds.has(r.id)) map.set(r.id, r);
+                });
+                data.forEach(item => {
+                  if (item && item.id && !deletedIds.has(item.id)) {
+                    map.set(item.id, { ...map.get(item.id), ...item });
+                  }
+                });
+                records = Array.from(map.values()).filter(r => !deletedIds.has(r.id));
+                records.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                persist();
+                renderHistory();
+                renderAnalytics();
+              }
+            })
+            .catch(() => {});
+        });
+    }
+
+    fetchRemoteHistory();
+    window.addEventListener('focus', () => fetchRemoteHistory());
+    window.addEventListener('online', () => fetchRemoteHistory());
+    setInterval(() => fetchRemoteHistory(), 20000);
+
+    let diceEngine = null;
+
+    /* ═════════════════════════════════════════════════════════════════
+       BLENDER 3D GLB DIE ENGINE (THREE.JS + GLTFLoader)
+       Loaded directly from Blender model: dice.glb
+       Real 3D beveled geometry, carved concave pits, glowing pips
+       ═════════════════════════════════════════════════════════════════ */
+    function init3dDice() {
+      const container = document.getElementById('dice3dWrap');
+      const canvas = document.getElementById('diceCanvas');
+      if (!container || !canvas || typeof THREE === 'undefined') return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+      camera.position.set(2.4, 2.0, 3.8);
+      camera.lookAt(0, -0.10, 0);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      renderer.outputEncoding = THREE.sRGBEncoding;
+
+      function resizeRenderer() {
+        const rect = container.getBoundingClientRect();
+        const w = Math.max(Math.floor(rect.width || container.clientWidth || 360), 200);
+        const h = Math.max(Math.floor(rect.height || container.clientHeight || 290), 200);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setPixelRatio(dpr);
+        renderer.setSize(w, h, false);
+      }
+      resizeRenderer();
+
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(resizeRenderer);
+        ro.observe(container);
+      }
+      window.addEventListener('resize', resizeRenderer);
+
+      // Studio & Neon Lighting (Optimized for Metallic + Sapphire Reflections)
+      const amb = new THREE.HemisphereLight(0xffffff, 0x1e293b, 1.25);
+      scene.add(amb);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+      keyLight.position.set(1.0, 3.8, 2.8);
+      scene.add(keyLight);
+
+      const frontFill = new THREE.DirectionalLight(0xe0f2fe, 1.3);
+      frontFill.position.set(0.2, 1.5, 3.8);
+      scene.add(frontFill);
+
+      // Vivid Neon Rim Lights (Left: Magenta, Right: Cyan)
+      const rimViolet = new THREE.DirectionalLight(0xd946ef, 3.8);
+      rimViolet.position.set(-3.5, 1.4, 1.4);
+      scene.add(rimViolet);
+
+      const rimCyan = new THREE.DirectionalLight(0x00f5c4, 3.8);
+      rimCyan.position.set(3.5, 1.4, 1.4);
+      scene.add(rimCyan);
+
+      const backRim = new THREE.DirectionalLight(0x93c5fd, 1.6);
+      backRim.position.set(0, 3.0, -3.0);
+      scene.add(backRim);
+
+      // Floor & Reflection Setup for Compact 0.88 Die
+      const cubeSize = 0.88;
+      const floorY = -cubeSize / 2; // -0.44
+      const mirrorMatrix = new THREE.Matrix4().set(
+        1,  0,  0,  0,
+        0, -1,  0,  2 * floorY,
+        0,  0,  1,  0,
+        0,  0,  0,  1
+      );
+
+      // Dark obsidian mirror floor
+      const floorMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(12, 12),
+        new THREE.MeshStandardMaterial({
+          color: 0x06080d,
+          roughness: 0.10,
+          metalness: 0.45,
+          transparent: true,
+          opacity: 0.78
+        })
+      );
+      floorMesh.rotation.x = -Math.PI / 2;
+      floorMesh.position.y = floorY;
+      scene.add(floorMesh);
+
+      // Soft contact shadow
+      const sCanvas = document.createElement('canvas');
+      sCanvas.width = 256; sCanvas.height = 256;
+      const sCtx = sCanvas.getContext('2d');
+      const sGrad = sCtx.createRadialGradient(128, 128, 12, 128, 128, 110);
+      sGrad.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+      sGrad.addColorStop(0.45, 'rgba(0, 0, 0, 0.40)');
+      sGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      sCtx.fillStyle = sGrad; sCtx.fillRect(0, 0, 256, 256);
+      const sTex = new THREE.CanvasTexture(sCanvas);
+
+      const sMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.5, 1.5),
+        new THREE.MeshBasicMaterial({ map: sTex, transparent: true, opacity: 0.92 })
+      );
+      sMesh.rotation.x = -Math.PI / 2;
+      sMesh.position.y = floorY + 0.003;
+      scene.add(sMesh);
+
+      // Floor neon glow pads (purple left, cyan right)
+      const pCanvas = document.createElement('canvas');
+      pCanvas.width = 128; pCanvas.height = 128;
+      const pCtx = pCanvas.getContext('2d');
+      const pGrad = pCtx.createRadialGradient(64, 64, 6, 64, 64, 60);
+      pGrad.addColorStop(0, 'rgba(217, 70, 239, 0.75)');
+      pGrad.addColorStop(0.5, 'rgba(168, 85, 247, 0.3)');
+      pGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      pCtx.fillStyle = pGrad; pCtx.fillRect(0, 0, 128, 128);
+      const pGlowMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.8, 1.8),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(pCanvas), transparent: true, opacity: 0.82, depthWrite: false })
+      );
+      pGlowMesh.rotation.x = -Math.PI / 2;
+      pGlowMesh.position.set(-0.65, floorY + 0.005, 0);
+      scene.add(pGlowMesh);
+
+      const cCanvas = document.createElement('canvas');
+      cCanvas.width = 128; cCanvas.height = 128;
+      const cCtx = cCanvas.getContext('2d');
+      const cGrad = cCtx.createRadialGradient(64, 64, 6, 64, 64, 60);
+      cGrad.addColorStop(0, 'rgba(0, 245, 196, 0.75)');
+      cGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.3)');
+      cGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      cCtx.fillStyle = cGrad; cCtx.fillRect(0, 0, 128, 128);
+      const cGlowMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.8, 1.8),
+        new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cCanvas), transparent: true, opacity: 0.82, depthWrite: false })
+      );
+      cGlowMesh.rotation.x = -Math.PI / 2;
+      cGlowMesh.position.set(0.65, floorY + 0.005, 0);
+      scene.add(cGlowMesh);
+
+      // ─── MATERIALS SETUP FOR MARKET PBR MODEL ───
+      const diceRoot = new THREE.Group();
+      scene.add(diceRoot);
+
+      const reflectRoot = new THREE.Group();
+      reflectRoot.matrixAutoUpdate = false;
+      scene.add(reflectRoot);
+
+      // High-End Instant Procedural Die (visible on frame 1 while GLTF loads)
+      function createFaceTex(number) {
+        const c = document.createElement('canvas');
+        c.width = 512; c.height = 512;
+        const ctx = c.getContext('2d');
+        // Deep metallic sapphire vignette
+        const g = ctx.createRadialGradient(256, 256, 40, 256, 256, 320);
+        g.addColorStop(0, '#1c2438');
+        g.addColorStop(0.65, '#0e1424');
+        g.addColorStop(1, '#05070e');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Soft curved inner corner shading (organic rounded die look)
+        const edgeGrad = ctx.createRadialGradient(256, 256, 180, 256, 256, 256);
+        edgeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        edgeGrad.addColorStop(0.8, 'rgba(5,7,14,0.35)');
+        edgeGrad.addColorStop(1, 'rgba(2,4,8,0.92)');
+        ctx.fillStyle = edgeGrad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        const pipMap = {
+          1: [[256, 256]],
+          2: [[160, 160], [352, 352]],
+          3: [[148, 148], [256, 256], [364, 364]],
+          4: [[152, 152], [360, 152], [152, 360], [360, 360]],
+          5: [[144, 144], [368, 144], [256, 256], [144, 368], [368, 368]],
+          6: [[148, 128], [364, 128], [148, 256], [364, 256], [148, 384], [364, 384]]
+        };
+        const pips = pipMap[number] || [];
+        pips.forEach(([x, y]) => {
+          // Sapphire radiant jewel halo
+          const pg = ctx.createRadialGradient(x, y, 8, x, y, 46);
+          pg.addColorStop(0, '#ffffff');
+          pg.addColorStop(0.25, '#38bdf8');
+          pg.addColorStop(0.65, 'rgba(56, 189, 248, 0.45)');
+          pg.addColorStop(1, 'rgba(56, 189, 248, 0)');
+          ctx.fillStyle = pg;
+          ctx.beginPath();
+          ctx.arc(x, y, 46, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Intense gem core
+          ctx.fillStyle = '#f0f9ff';
+          ctx.beginPath();
+          ctx.arc(x, y, 22, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        const tex = new THREE.CanvasTexture(c);
+        tex.generateMipmaps = true;
+        return tex;
+      }
+
+      const instantMats = [
+        new THREE.MeshStandardMaterial({ map: createFaceTex(1), roughness: 0.18, metalness: 0.88 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTex(6), roughness: 0.18, metalness: 0.88 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTex(2), roughness: 0.18, metalness: 0.88 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTex(5), roughness: 0.18, metalness: 0.88 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTex(4), roughness: 0.18, metalness: 0.88 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTex(3), roughness: 0.18, metalness: 0.88 })
+      ];
+      const placeGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+      const placeMesh = new THREE.Mesh(placeGeo, instantMats);
+      placeMesh.castShadow = true;
+      placeMesh.receiveShadow = true;
+      diceRoot.add(placeMesh);
+
+      // Instant reflection mesh
+      const placeReflectMats = instantMats.map(m => {
+        const rm = m.clone();
+        rm.transparent = true;
+        rm.opacity = 0.42;
+        return rm;
+      });
+      const placeReflectMesh = new THREE.Mesh(placeGeo, placeReflectMats);
+      reflectRoot.add(placeReflectMesh);
+
+      let isGltfReady = false;
+
+      // Load Sketchfab/Blender Market PBR Model (Metallic + Sapphire)
+      if (typeof THREE.GLTFLoader !== 'undefined') {
+        const loader = new THREE.GLTFLoader();
+        loader.load('market_dice.glb?v=35', function (gltf) {
+          const model = gltf.scene;
+
+          // Remove instant placeholder when GLTF is fully ready
+          if (placeMesh) {
+            diceRoot.remove(placeMesh);
+          }
+          if (placeReflectMesh) {
+            reflectRoot.remove(placeReflectMesh);
+          }
+
+          // Scale model from native 2.0 size to compact 0.88 stage size (35% smaller)
+          const targetScale = cubeSize / 2.0; // 0.44
+          model.scale.set(targetScale, targetScale, targetScale);
+
+          const maxAniso = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 16;
+
+          model.traverse(function (child) {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+
+              if (child.material) {
+                // Apply 16x Anisotropic filtering for crystal-clear 4K sharpness
+                ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap'].forEach(function (k) {
+                  if (child.material[k]) {
+                    child.material[k].anisotropy = maxAniso;
+                    child.material[k].generateMipmaps = true;
+                    child.material[k].minFilter = THREE.LinearMipmapLinearFilter;
+                    child.material[k].magFilter = THREE.LinearFilter;
+                    child.material[k].needsUpdate = true;
+                  }
+                });
+              }
+
+              if (child.name === 'defaultMaterial') {
+                // Sapphire Pips — deeply radiant jewel luminescence
+                if (child.material) {
+                  child.material.emissive = new THREE.Color(0x38bdf8);
+                  child.material.emissiveMap = child.material.map;
+                  child.material.emissiveIntensity = 1.95;
+                  child.material.roughness = 0.04;
+                  child.material.metalness = 0.15;
+                }
+              } else {
+                // Metallic Die Body — sleek dark titanium / gunmetal
+                if (child.material) {
+                  child.material.metalness = 0.88;
+                  child.material.roughness = 0.18;
+                  if (child.material.color) {
+                    child.material.color.setRGB(0.92, 0.96, 1.05);
+                  }
+                }
+              }
+            }
+          });
+          diceRoot.add(model);
+
+          // Floor Reflection clone
+          const reflectModel = model.clone(true);
+          reflectModel.traverse(function (child) {
+            if (child.isMesh && child.material) {
+              const origMat = child.material;
+              child.material = origMat.clone();
+              child.material.transparent = true;
+              child.material.opacity = 0.42;
+              child.material.side = THREE.DoubleSide;
+            }
+          });
+          reflectRoot.add(reflectModel);
+          isGltfReady = true;
+          updateReflection();
+        }, undefined, function (err) {
+          console.warn('Market GLTF load fallback:', err);
+        });
+      }
+
+      // Mathematical Target Rotations to place winning face strictly on top (+Y)
+      // Verified from mesh vertex inspection of market_dice.glb:
+      // +X is 1, +Y is 2, -Z is 3, +Z is 4, -Y is 5, -X is 6
+      const TARGET_ROTS = {
+        1: { x: 0,            z: Math.PI / 2 },
+        2: { x: 0,            z: 0 },
+        3: { x: Math.PI / 2,  z: 0 },
+        4: { x: -Math.PI / 2, z: 0 },
+        5: { x: Math.PI,      z: 0 },
+        6: { x: 0,            z: -Math.PI / 2 }
+      };
+
+      function updateReflection() {
+        diceRoot.updateMatrix();
+        reflectRoot.matrix.copy(mirrorMatrix).multiply(diceRoot.matrix);
+        reflectRoot.matrixWorld.copy(reflectRoot.matrix);
+        reflectRoot.updateMatrixWorld(true);
+      }
+
+      // Continuous Silky Idle Rotation
+      const worldY = new THREE.Vector3(0, 1, 0);
+      let isIdleSpinning = true;
+
+      function renderLoop() {
+        requestAnimationFrame(renderLoop);
+
+        if (isIdleSpinning) {
+          diceRoot.rotateOnWorldAxis(worldY, 0.007);
+          diceRoot.position.y = 0;
+        }
+
+        updateReflection();
+        renderer.render(scene, camera);
+      }
+      renderLoop();
+
+      diceEngine = {
+        roll: function (val, onComplete) {
+          isIdleSpinning = false;
+
+          const startQuat = diceRoot.quaternion.clone();
+          const targetQuat = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(TARGET_ROTS[val].x, 0, TARGET_ROTS[val].z)
+          );
+
+          const tumbleAxis = new THREE.Vector3(
+            (Math.random() - 0.5) * 2,
+            1.2,
+            (Math.random() - 0.5) * 2
+          ).normalize();
+
+          const duration = 1350;
+          const startTime = performance.now();
+
+          function anim(now) {
+            const t = Math.min((now - startTime) / duration, 1);
+            const ease = 1 - Math.pow(1 - t, 4);
+
+            const jump = Math.sin(t * Math.PI) * 0.20;
+            diceRoot.position.y = jump;
+            sMesh.scale.set(1 - jump * 0.45, 1 - jump * 0.45, 1);
+            sMesh.material.opacity = 0.92 - jump * 0.55;
+
+            const remainingSpins = (1 - ease) * Math.PI * 6;
+            const tumbleQuat = new THREE.Quaternion().setFromAxisAngle(tumbleAxis, remainingSpins);
+            diceRoot.quaternion.copy(startQuat).slerp(targetQuat, ease).multiply(tumbleQuat);
+
+            updateReflection();
+
+            if (t < 1) {
+              requestAnimationFrame(anim);
+            } else {
+              diceRoot.position.y = 0;
+              diceRoot.quaternion.copy(targetQuat);
+              sMesh.scale.set(1, 1, 1);
+              sMesh.material.opacity = 0.88;
+              updateReflection();
+
+              if (onComplete) onComplete();
+
+              setTimeout(() => {
+                isIdleSpinning = true;
+              }, 400);
+            }
+          }
+          requestAnimationFrame(anim);
+        }
+      };
+    }
+
+    /* 3D Dice Roll Logic */
+    function rollDice() {
+      if (isRolling) return;
+      isRolling = true;
+
+      const btnRoll = document.getElementById('btnRoll');
+      const pill = document.getElementById('verdictPill');
+      const pillText = document.getElementById('verdictPillText');
+
+      btnRoll.style.pointerEvents = 'none';
+
+      const val = Math.floor(Math.random() * 6) + 1;
+      const isEven = val % 2 === 0;
+
+      function onRollFinish() {
+        isRolling = false;
+        btnRoll.style.pointerEvents = 'auto';
+
+        if (navigator.vibrate) {
+          navigator.vibrate([15, 30, 20]);
+        }
+
+        lastRoll = {
+          number: val,
+          isEven: isEven,
+          verdictText: isEven ? 'ДА' : 'НЕТ',
+          timestamp: new Date().toISOString()
+        };
+
+        if (isEven) {
+          pill.className = 'verdict-pill yes';
+          pillText.textContent = 'ДА';
+        } else {
+          pill.className = 'verdict-pill no';
+          pillText.textContent = 'НЕТ';
+        }
+
+        const after = document.querySelector('.after-roll');
+        if (after) after.open = true;
+
+        const qInput = document.getElementById('questionInput');
+        if (!qInput.value.trim()) {
+          qInput.focus();
+        }
+      }
+
+      if (diceEngine) {
+        diceEngine.roll(val, onRollFinish);
+      } else {
+        setTimeout(onRollFinish, 800);
+      }
+    }
+
+    /* Save Record */
+    function saveRecord() {
+      const qInput = document.getElementById('questionInput');
+      const notesInput = document.getElementById('notesInput');
+      const question = qInput.value.trim() || 'Решение по жребию';
+
+      if (!lastRoll) {
+        showToast('⚠️ Сначала бросьте кубик!');
+        return;
+      }
+
+      const finalCat = selectedCategory || detectCategory(question);
+
+      const newRecord = {
+        id: 'rec_' + Date.now(),
+        chatId: currentUserId,
+        question: question,
+        category: finalCat,
+        diceNumber: lastRoll.number,
+        diceValue: lastRoll.number,
+        isEven: lastRoll.isEven,
+        verdictText: lastRoll.verdictText,
+        followed: selectedFollowed,
+        outcome: selectedOutcome,
+        notes: notesInput.value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      records.unshift(newRecord);
+      persist();
+
+      fetch('/api/history?u=' + encodeURIComponent(currentUserId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecord)
+      }).catch(() => {});
+
+      qInput.value = '';
+      notesInput.value = '';
+      selectedCategory = '';
+      document.querySelectorAll('.tag-chip').forEach(el => el.classList.remove('active'));
+
+      renderHistory();
+      renderAnalytics();
+      showToast('✅ Записано в историю!');
+    }
+
+    function persist() {
+      try {
+        const json = JSON.stringify(records);
+        localStorage.setItem(STORAGE_KEY, json);
+        localStorage.setItem(STORAGE_KEY + '_backup', json);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       RENDER PROFESSIONAL ANALYTICS & CHARTS
+       ═════════════════════════════════════════════════════════════════ */
+    function renderAnalytics() {
+      const total = records.length;
+      document.getElementById('navCount').textContent = total;
+      document.getElementById('kpiTotal').textContent = total;
+
+      if (total === 0) {
+        document.getElementById('kpiRatio').textContent = '0 / 0';
+        document.getElementById('kpiFollowRate').textContent = '0%';
+        document.getElementById('kpiPleasedRate').textContent = '0%';
+        document.getElementById('donutVerdictContainer').innerHTML = renderEmptyDonut();
+        document.getElementById('donutOutcomeContainer').innerHTML = renderEmptyDonut();
+        document.getElementById('legendYesCount').textContent = '0 (0%)';
+        document.getElementById('legendNoCount').textContent = '0 (0%)';
+        document.getElementById('categoryRankingList').innerHTML = '<div style="color: var(--text-dim); font-size: 0.8rem; padding: 10px 0;">Нет данных</div>';
+        document.getElementById('psychologicalInsightText').textContent = 'Сделайте первые несколько решений, чтобы алгоритм рассчитал ваш паттерн сомнений, доверие случайности и зоны наивысшей успешности.';
+        return;
+      }
+
+      const yesCount = records.filter(r => r.isEven).length;
+      const noCount = total - yesCount;
+      const yesPct = Math.round((yesCount / total) * 100);
+      const noPct = 100 - yesPct;
+
+      document.getElementById('kpiRatio').textContent = `${yesCount} / ${noCount}`;
+      document.getElementById('kpiRatioSub').textContent = `ДА: ${yesPct}% • НЕТ: ${noPct}%`;
+      document.getElementById('legendYesCount').textContent = `${yesCount} (${yesPct}%)`;
+      document.getElementById('legendNoCount').textContent = `${noCount} (${noPct}%)`;
+
+      // Followed rate
+      const followedCount = records.filter(r => r.followed === 'followed').length;
+      const followRate = Math.round((followedCount / total) * 100);
+      document.getElementById('kpiFollowRate').textContent = `${followRate}%`;
+      document.getElementById('kpiFollowSub').textContent = `${followedCount} из ${total} решений`;
+
+      // Pleased rate
+      const pleasedCount = records.filter(r => r.outcome === 'pleased').length;
+      const neutralCount = records.filter(r => r.outcome === 'neutral').length;
+      const regretCount = records.filter(r => r.outcome === 'regret').length;
+      const unknownCount = records.filter(r => !r.outcome || r.outcome === 'unknown').length;
+
+      const pleasedRate = Math.round((pleasedCount / total) * 100);
+      document.getElementById('kpiPleasedRate').textContent = `${pleasedRate}%`;
+      document.getElementById('kpiPleasedSub').textContent = `${pleasedCount} доволен, ${regretCount} пожалел`;
+
+      document.getElementById('legendPleased').textContent = pleasedCount;
+      document.getElementById('legendNeutral').textContent = neutralCount;
+      document.getElementById('legendRegret').textContent = regretCount;
+      document.getElementById('legendUnknown').textContent = unknownCount;
+
+      // Donut 1: Verdict
+      document.getElementById('donutVerdictContainer').innerHTML = renderDonutSvg([
+        { val: yesCount, color: '#10b981' },
+        { val: noCount, color: '#f43f5e' }
+      ], `${yesPct}%`, 'ДА');
+
+      // Donut 2: Outcome
+      document.getElementById('donutOutcomeContainer').innerHTML = renderDonutSvg([
+        { val: pleasedCount, color: '#10b981' },
+        { val: neutralCount, color: '#f59e0b' },
+        { val: regretCount, color: '#f43f5e' },
+        { val: unknownCount, color: '#64748b' }
+      ], `${pleasedRate}%`, 'УСПЕХ');
+
+      // Correlation Matrix ("Где положительно сбывается")
+      const followedRecords = records.filter(r => r.followed === 'followed');
+      const followedPleased = followedRecords.filter(r => r.outcome === 'pleased').length;
+      const followedNeutral = followedRecords.filter(r => r.outcome === 'neutral').length;
+      const followedRegret = followedRecords.filter(r => r.outcome === 'regret').length;
+      const followedRate = followedRecords.length > 0 ? Math.round((followedPleased / followedRecords.length) * 100) : 0;
+
+      document.getElementById('matrixFollowedRate').textContent = `${followedRate}% доволен`;
+      document.getElementById('matrixFollowedDetail').textContent = `Всего: ${followedRecords.length} (Доволен: ${followedPleased}, Пожалел: ${followedRegret})`;
+      
+      if (followedRecords.length > 0) {
+        document.getElementById('barFollowedPleased').style.width = `${(followedPleased / followedRecords.length) * 100}%`;
+        document.getElementById('barFollowedNeutral').style.width = `${(followedNeutral / followedRecords.length) * 100}%`;
+        document.getElementById('barFollowedRegret').style.width = `${(followedRegret / followedRecords.length) * 100}%`;
+      } else {
+        document.getElementById('barFollowedPleased').style.width = '0%';
+        document.getElementById('barFollowedNeutral').style.width = '0%';
+        document.getElementById('barFollowedRegret').style.width = '0%';
+      }
+
+      const defiedRecords = records.filter(r => r.followed === 'defied');
+      const defiedPleased = defiedRecords.filter(r => r.outcome === 'pleased').length;
+      const defiedNeutral = defiedRecords.filter(r => r.outcome === 'neutral').length;
+      const defiedRegret = defiedRecords.filter(r => r.outcome === 'regret').length;
+      const defiedRate = defiedRecords.length > 0 ? Math.round((defiedPleased / defiedRecords.length) * 100) : 0;
+
+      document.getElementById('matrixDefiedRate').textContent = `${defiedRate}% доволен`;
+      document.getElementById('matrixDefiedDetail').textContent = `Всего: ${defiedRecords.length} (Доволен: ${defiedPleased}, Пожалел: ${defiedRegret})`;
+
+      if (defiedRecords.length > 0) {
+        document.getElementById('barDefiedPleased').style.width = `${(defiedPleased / defiedRecords.length) * 100}%`;
+        document.getElementById('barDefiedNeutral').style.width = `${(defiedNeutral / defiedRecords.length) * 100}%`;
+        document.getElementById('barDefiedRegret').style.width = `${(defiedRegret / defiedRecords.length) * 100}%`;
+      } else {
+        document.getElementById('barDefiedPleased').style.width = '0%';
+        document.getElementById('barDefiedNeutral').style.width = '0%';
+        document.getElementById('barDefiedRegret').style.width = '0%';
+      }
+
+      // Category Ranking List across ALL canonical categories
+      const catStats = CANONICAL_CATEGORIES.map(cDef => {
+        const catRecords = records.filter(r => normalizeCategory(r.category) === cDef.name);
+        const total = catRecords.length;
+        const pleased = catRecords.filter(r => r.outcome === 'pleased').length;
+        const rate = total > 0 ? Math.round((pleased / total) * 100) : 0;
+        return {
+          ...cDef,
+          total,
+          pleased,
+          rate
+        };
+      });
+
+      // Categories with records sorted by success rate, followed by zero-record categories
+      catStats.sort((a, b) => {
+        if (a.total > 0 && b.total === 0) return -1;
+        if (b.total > 0 && a.total === 0) return 1;
+        if (a.total > 0 && b.total > 0) {
+          if (b.rate !== a.rate) return b.rate - a.rate;
+          return b.total - a.total;
+        }
+        return 0;
+      });
+
+      const catMap = {};
+      catStats.forEach(c => { catMap[c.name] = c; });
+      const sortedCats = catStats.filter(c => c.total > 0).map(c => c.name);
+
+      document.getElementById('categoryRankingList').innerHTML = catStats.map((cat, idx) => {
+        const hasRecords = cat.total > 0;
+        return `
+          <div class="cat-row" style="${hasRecords ? '' : 'opacity: 0.55;'}">
+            <span class="cat-name" title="${escapeHtml(cat.name)}">${cat.icon} ${escapeHtml(cat.name)}</span>
+            <div class="cat-bar-track">
+              <div class="cat-bar-fill" style="width: ${hasRecords ? cat.rate : 0}%;"></div>
+            </div>
+            <span class="cat-rate" style="color: ${hasRecords ? (cat.rate >= 50 ? '#34d399' : '#fb7185') : 'var(--text-dim)'};">${hasRecords ? `${cat.rate}%` : '—'}</span>
+            <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); min-width: 52px; text-align: right;">${cat.total} реш.</span>
+          </div>
+        `;
+      }).join('');
+
+      // Psychological Insight
+      document.getElementById('psychologicalInsightText').innerHTML = generateInsightHtml(records, followedRate, defiedRate, sortedCats, catMap);
+    }
+
+    function renderEmptyDonut() {
+      return `
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none"/>
+          <text x="50" y="55" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#64748b">0</text>
+        </svg>
+      `;
+    }
+
+    function renderDonutSvg(segments, centerText, centerSub) {
+      const total = segments.reduce((acc, s) => acc + s.val, 0);
+      if (total === 0) return renderEmptyDonut();
+
+      const r = 38;
+      const c = 2 * Math.PI * r;
+      let offset = 0;
+
+      let circles = segments.map(s => {
+        if (s.val === 0) return '';
+        const pct = s.val / total;
+        const strokeLength = pct * c;
+        const strokeDash = `${strokeLength} ${c - strokeLength}`;
+        const strokeOffset = -offset;
+        offset += strokeLength;
+
+        return `
+          <circle 
+            cx="50" cy="50" r="${r}" 
+            stroke="${s.color}" 
+            stroke-width="11" 
+            stroke-dasharray="${strokeDash}" 
+            stroke-dashoffset="${strokeOffset}" 
+            fill="none" 
+            stroke-linecap="round"
+          />
+        `;
+      }).join('');
+
+      return `
+        <svg width="110" height="110" viewBox="0 0 100 100" style="transform: rotate(-90deg);">
+          <circle cx="50" cy="50" r="${r}" stroke="rgba(255,255,255,0.06)" stroke-width="11" fill="none"/>
+          ${circles}
+        </svg>
+        <div style="position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;">
+          <span style="font-family: var(--font-mono); font-size: 1rem; font-weight: 700; color: #fff; line-height: 1;">${centerText}</span>
+          <span style="font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;">${centerSub}</span>
+        </div>
+      `;
+    }
+
+    function generateInsightHtml(recs, followedRate, defiedRate, sortedCats, catMap) {
+      const followed = recs.filter(r => r.followed === 'followed');
+      const defied = recs.filter(r => r.followed === 'defied');
+
+      let text = '';
+      if (followed.length >= 1 && defied.length >= 1) {
+        if (followedRate > defiedRate) {
+          text += `🎯 <b>Доверие жребию работает в плюс:</b> когда вы следуете выпавшему решению, удовлетворённость исходом составляет <b>${followedRate}%</b>, что заметно превышает решения вопреки (<b>${defiedRate}%</b>). `;
+        } else if (defiedRate > followedRate) {
+          text += `🧠 <b>Сильная внутренняя контр-интуиция:</b> при действиях вопреки кубику процент успеха достигает <b>${defiedRate}%</b>. Кубик для вас выступает в роли «зеркала сомнений», помогая кристаллизовать истинное желание. `;
+        } else {
+          text += `⚖️ <b>Паритет интуиции:</b> исходы при следовании совету и вопреки показали одинаковую сбываемость (${followedRate}%). `;
+        }
+      } else if (followed.length >= 2) {
+        text += `🟢 <b>Высокая приверженность жребию:</b> вы последовательно доверяете выпавшему вердикту с положительным исходом в <b>${followedRate}%</b> случаев. `;
+      }
+
+      if (sortedCats.length > 0 && catMap[sortedCats[0]].pleased > 0) {
+        const best = sortedCats[0];
+        const bestRate = Math.round((catMap[best].pleased / catMap[best].total) * 100);
+        text += `Наивысшая сбываемость и психологический комфорт зафиксированы в теме «<b>${escapeHtml(best)}</b>» (<b>${bestRate}%</b> положительных исходов).`;
+      }
+
+      return text || 'Продолжайте фиксировать решения, чтобы увидеть более глубокие корреляции.';
+    }
+
+    /* ═════════════════════════════════════════════════════════════════
+       RENDER HISTORY LIST
+       ═════════════════════════════════════════════════════════════════ */
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      const countEl = document.getElementById('historyCount');
+      countEl.textContent = records.length;
+      document.getElementById('navCount').textContent = records.length;
+
+      let filtered = [...records];
+      if (currentFilter === 'yes') filtered = filtered.filter(r => r.isEven);
+      else if (currentFilter === 'no') filtered = filtered.filter(r => !r.isEven);
+      else if (currentFilter === 'notes') filtered = filtered.filter(r => r.notes && r.notes.trim().length > 0);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div style="text-align: center; color: var(--text-dim); padding: 36px 16px; font-size: 0.84rem;">
+            В истории пока пусто.<br>Задай вопрос, брось кубик и сохрани решение!
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(r => {
+        const dateStr = new Date(r.createdAt).toLocaleString('ru-RU', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+
+        const followLabel = r.followed === 'followed' 
+          ? '🟢 Послушался' 
+          : (r.followed === 'defied' ? '🔴 Наоборот' : '⏳ Думаю');
+
+        let outcomeLabel = '❓ Не ясно';
+        if (r.outcome === 'pleased') outcomeLabel = '😊 Доволен';
+        else if (r.outcome === 'neutral') outcomeLabel = '😐 Нормально';
+        else if (r.outcome === 'regret') outcomeLabel = '😞 Пожалел';
+
+        const diceNum = r.diceNumber || r.diceValue || (r.isEven ? 2 : 1);
+
+        return `
+          <div class="history-entry">
+            <div class="entry-top-line">
+              <div class="entry-badge ${r.isEven ? 'even' : 'odd'}" title="${r.isEven ? 'ДА' : 'НЕТ'}">
+                ${r.isEven ? 'ДА' : 'НЕТ'}
+              </div>
+              <div style="flex: 1;">
+                <div class="entry-q">${escapeHtml(r.question)}</div>
+                <div class="entry-meta-line">
+                  <span>${dateStr}</span>
+                  <span>•</span>
+                  <span>${escapeHtml(r.category)}</span>
+                  <span>•</span>
+                  <span>${outcomeLabel}</span>
+                </div>
+              </div>
+            </div>
+
+            ${r.notes ? `
+              <div class="entry-notes-box">
+                <b>Заметка:</b> ${escapeHtml(r.notes)}
+              </div>
+            ` : ''}
+
+            <div class="entry-foot">
+              <span>Действие: <b>${followLabel}</b></span>
+              <div>
+                <button class="btn-action-text" onclick="openEditModal('${r.id}')">✏️ Редактировать</button>
+                <button class="btn-action-text del" onclick="deleteEntry('${r.id}')">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* Delete Record */
+    function deleteEntry(id) {
+      if (!confirm('Удалить эту запись?')) return;
+      deletedIds.add(id);
+      saveDeletedIds();
+      records = records.filter(r => r.id !== id);
+      persist();
+      renderHistory();
+      renderAnalytics();
+      showToast('Запись удалена');
+
+      fetch('/api/history/delete?u=' + encodeURIComponent(currentUserId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, userId: currentUserId })
+      }).then(() => {
+        fetchRemoteHistory();
+      }).catch(() => {});
+    }
+
+    /* Edit Modal Logic */
+    function openEditModal(id) {
+      const rec = records.find(r => r.id === id);
+      if (!rec) return;
+
+      currentEditingId = id;
+      document.getElementById('editModalTitle').textContent = `«${escapeHtml(rec.question)}»`;
+      document.getElementById('modalNotes').value = rec.notes || '';
+
+      setModalGroupActive('modalChoiceFollowed', rec.followed || 'pending');
+      setModalGroupActive('modalChoiceOutcome', rec.outcome || 'unknown');
+
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function setModalGroupActive(containerId, val) {
+      document.querySelectorAll(`#${containerId} .choice-pill`).forEach(btn => {
+        if (btn.dataset.val === val) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    function closeEditModal() {
+      currentEditingId = null;
+      document.getElementById('editModal').classList.remove('open');
+    }
+
+    function saveEditModal() {
+      if (!currentEditingId) return;
+      const rec = records.find(r => r.id === currentEditingId);
+      if (!rec) return;
+
+      const activeFollow = document.querySelector('#modalChoiceFollowed .choice-pill.active');
+      const activeOutcome = document.querySelector('#modalChoiceOutcome .choice-pill.active');
+
+      if (activeFollow) rec.followed = activeFollow.dataset.val;
+      if (activeOutcome) rec.outcome = activeOutcome.dataset.val;
+      rec.notes = document.getElementById('modalNotes').value.trim();
+      rec.chatId = currentUserId;
+
+      persist();
+      fetch('/api/history?u=' + encodeURIComponent(currentUserId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rec)
+      }).catch(() => {});
+
+      renderHistory();
+      renderAnalytics();
+      closeEditModal();
+      showToast('✅ Изменения сохранены!');
+    }
+
+    /* AI Analysis Export */
+    function copyForAi() {
+      if (records.length === 0) {
+        showToast('История пока пуста!');
+        return;
+      }
+
+      const total = records.length;
+      const yesCount = records.filter(r => r.isEven).length;
+      const noCount = total - yesCount;
+      const followedCount = records.filter(r => r.followed === 'followed').length;
+      const defiedCount = records.filter(r => r.followed === 'defied').length;
+      const pleasedCount = records.filter(r => r.outcome === 'pleased').length;
+      const regretCount = records.filter(r => r.outcome === 'regret').length;
+
+      let prompt = `Привет! Вот моя история решений по кубику (Чётное = ДА, Нечётное = НЕТ):\n\n`;
+      prompt += `### 1. СВОДКА:\n`;
+      prompt += `- Всего решений: ${total}\n`;
+      prompt += `- Вердикты кубика: ЧЁТНОЕ — ${yesCount} (${Math.round(yesCount/total*100)}%), НЕЧЁТНОЕ — ${noCount} (${Math.round(noCount/total*100)}%)\n`;
+      prompt += `- Следование совету: послушался — ${followedCount}, сделал наоборот — ${defiedCount}\n`;
+      prompt += `- Оценка исходов: доволен — ${pleasedCount}, пожалел — ${regretCount}\n\n`;
+
+      prompt += `### 2. ЛЕТОПИСЬ РЕШЕНИЙ:\n`;
+      records.forEach((r, idx) => {
+        const d = new Date(r.createdAt).toLocaleDateString('ru-RU');
+        const follow = r.followed === 'followed' ? 'Послушался' : (r.followed === 'defied' ? 'Сделал наоборот' : 'Думаю');
+        prompt += `${idx + 1}. [${d}] "${r.question}"\n`;
+        prompt += `   • Сфера: ${r.category} | Кубик: ${r.diceNumber} | Действие: ${follow} | Исход: ${r.outcome}\n`;
+        if (r.notes) prompt += `   • Последствия: "${r.notes}"\n`;
+        prompt += `\n`;
+      });
+
+      prompt += `### 3. ЗАПРОС НА АНАЛИЗ:\n`;
+      prompt += `Сделай психологический анализ: в каких темах я чаще всего полагаюсь на случайность, как соотносятся исходы (когда послушался vs когда пошёл вопреки), и какие паттерны сомнений или прокрастинации здесь видны?\n`;
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        showToast('📋 Отчёт скопирован в буфер обмена!');
+      }).catch(() => {
+        showToast('📋 Скопировано!');
+      });
+    }
+
+    /* JSON Export */
+    function exportJson() {
+      if (records.length === 0) {
+        showToast('История пуста');
+        return;
+      }
+      const data = JSON.stringify(records, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `кубик-решений-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('💾 Файл скачан!');
+    }
+
+    /* Reset / Clear All */
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('open');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('open');
+    }
+
+    function confirmReset() {
+      records.forEach(r => {
+        if (r && r.id) deletedIds.add(r.id);
+      });
+      saveDeletedIds();
+      records = [];
+      persist();
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY + '_backup');
+      } catch (e) {}
+      fetch('/api/history/clear?u=' + encodeURIComponent(currentUserId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId })
+      }).catch(() => {});
+      renderHistory();
+      renderAnalytics();
+      closeResetModal();
+      showToast('✨ Вся история полностью обнулена!');
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toastBox');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    /* Event Listeners & App Lifecycle */
+    function initApp() {
+      // Telegram WebApp Integration
+      if (window.Telegram && window.Telegram.WebApp) {
+        try {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+          if (window.Telegram.WebApp.setHeaderColor) {
+            window.Telegram.WebApp.setHeaderColor('#06080d');
+          }
+          if (window.Telegram.WebApp.setBackgroundColor) {
+            window.Telegram.WebApp.setBackgroundColor('#06080d');
+          }
+        } catch (e) {
+          console.warn('Telegram WebApp init warning:', e);
+        }
+      }
+
+      // Initialize Solid Telegram-style 3D Die
+      try {
+        init3dDice();
+      } catch (err) {
+        console.warn('3D dice init warning:', err);
+      }
+
+      const diceWrap = document.getElementById('dice3dWrap');
+      if (diceWrap) diceWrap.addEventListener('click', rollDice);
+
+      const btnRoll = document.getElementById('btnRoll');
+      if (btnRoll) btnRoll.addEventListener('click', rollDice);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          rollDice();
+        }
+      });
+
+      // Tags & live auto-detection
+      let manualCategorySelected = false;
+      const qInput = document.getElementById('questionInput');
+
+      document.getElementById('tagsStrip').addEventListener('click', (e) => {
+        const chip = e.target.closest('.tag-chip');
+        if (chip) {
+          manualCategorySelected = true;
+          document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          selectedCategory = chip.dataset.cat;
+        }
+      });
+
+      if (qInput) {
+        qInput.addEventListener('input', () => {
+          if (!manualCategorySelected) {
+            const val = qInput.value.trim();
+            if (val) {
+              const detected = detectCategory(val);
+              selectedCategory = detected;
+              document.querySelectorAll('.tag-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.cat === detected);
+              });
+            } else {
+              selectedCategory = '';
+              document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+            }
+          }
+        });
+      }
+
+      // Choice helper
+      function setupChoiceGroup(containerId, callback) {
+        document.getElementById(containerId).addEventListener('click', (e) => {
+          const btn = e.target.closest('.choice-pill');
+          if (!btn) return;
+          document.querySelectorAll(`#${containerId} .choice-pill`).forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          callback(btn.dataset.val);
+        });
+      }
+
+      setupChoiceGroup('choiceFollowed', val => selectedFollowed = val);
+      setupChoiceGroup('choiceOutcome', val => selectedOutcome = val);
+
+      // Modal choice helpers
+      setupChoiceGroup('modalChoiceFollowed', () => {});
+      setupChoiceGroup('modalChoiceOutcome', () => {});
+
+      // Buttons
+      document.getElementById('btnSaveRecord').addEventListener('click', saveRecord);
+      document.getElementById('btnAiCopy').addEventListener('click', copyForAi);
+      document.getElementById('btnExportJson').addEventListener('click', exportJson);
+      document.getElementById('btnResetHistory').addEventListener('click', openResetModal);
+
+      // Modal buttons
+      document.getElementById('btnCancelReset').addEventListener('click', closeResetModal);
+      document.getElementById('btnConfirmReset').addEventListener('click', confirmReset);
+      document.getElementById('btnCancelEdit').addEventListener('click', closeEditModal);
+      document.getElementById('btnSaveEdit').addEventListener('click', saveEditModal);
+
+      // Filter tabs
+      document.querySelectorAll('.tab-btn').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+          e.target.classList.add('active');
+          currentFilter = e.target.dataset.filter;
+          renderHistory();
+        });
+      });
+
+      renderHistory();
+      renderAnalytics();
+
+      // Check iOS PWA install banner
+      checkIosPrompt();
+
+      // Register Service Worker for offline PWA operation with auto-reload on new version
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js?v=35').then(reg => {
+          reg.update();
+        }).catch(err => {
+          console.log('SW registration skipped:', err);
+        });
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    function checkIosPrompt() {
+      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      const isStandalone = ('standalone' in window.navigator) && (window.navigator.standalone);
+      if (isIos && !isStandalone && !localStorage.getItem('ios_banner_dismissed')) {
+        const b = document.getElementById('iosPwaBanner');
+        if (b) b.style.display = 'flex';
+      }
+    }
+
+    function dismissIosBanner() {
+      const b = document.getElementById('iosPwaBanner');
+      if (b) b.style.display = 'none';
+      try {
+        localStorage.setItem('ios_banner_dismissed', 'true');
+      } catch (e) {}
+    }
+
+    function openVisualModal() {
+      const m = document.getElementById('visualShowcaseModal');
+      if (m) m.style.display = 'block';
+    }
+
+    function closeVisualModal() {
+      const m = document.getElementById('visualShowcaseModal');
+      if (m) m.style.display = 'none';
+    }
+
+    async function forceAppUpdateAndSync() {
+      if (typeof showToast === 'function') {
+        showToast('🔄 Сброс кэша и обновление кубика...');
+      }
+      try {
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) {
+            await r.unregister();
+          }
+        }
+      } catch (e) {
+        console.error('Cache purge error:', e);
+      }
+      setTimeout(() => {
+        window.location.replace(window.location.origin + window.location.pathname + '?reload=' + Date.now());
+      }, 200);
+    }
+  </script>
+
+  <!-- Visual 3D Showcase Modal -->
+  <div id="visualShowcaseModal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(4, 6, 12, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); overflow-y: auto; padding: 20px 16px;">
+    <div style="max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <h3 style="font-size: 1.05rem; color: #fff; font-weight: 700;">3D-рендеры кубика со всех сторон</h3>
+        <button onclick="closeVisualModal()" style="background: rgba(255,255,255,0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">✕</button>
+      </div>
+      <p style="font-size: 0.82rem; color: #94a3b8; line-height: 1.4;">Все ракурсы, грани и светящиеся лунки, точно соответствующие референсу:</p>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: rgba(15, 20, 32, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 12px;">
+          <div style="font-size: 0.78rem; font-weight: 600; color: #38bdf8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">1. Изометрия со всех ракурсов</div>
+          <img src="preview_turnaround.jpg" alt="Обзор со всех сторон" style="width: 100%; border-radius: 12px; display: block;">
+        </div>
+
+        <div style="background: rgba(15, 20, 32, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 12px;">
+          <div style="font-size: 0.78rem; font-weight: 600; color: #c084fc; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">2. Крупный план: обратные грани (4, 5, 6)</div>
+          <img src="preview_reverse.jpg" alt="Обратные грани" style="width: 100%; border-radius: 12px; display: block;">
+        </div>
+
+        <div style="background: rgba(15, 20, 32, 0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 12px;">
+          <div style="font-size: 0.78rem; font-weight: 600; color: #34d399; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">3. Раскладка всех 6 граней (лунки и неон)</div>
+          <img src="preview_six_faces.jpg" alt="Все 6 граней" style="width: 100%; border-radius: 12px; display: block;">
+        </div>
+      </div>
+      
+      <button onclick="closeVisualModal()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #7c3aed, #06b6d4); color: #fff; border: none; border-radius: 14px; font-weight: 700; font-size: 0.95rem; cursor: pointer; margin-top: 8px;">
+        ЗАКРЫТЬ
+      </button>
+    </div>
+  </div>
+</body>
+</html>

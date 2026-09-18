@@ -1,0 +1,17 @@
+node_modules/
+.cursor/
+*.log
+tunnel_url.txt
+market_dice_orig.glb
+market_dice_opt.glb
+*.py
+*.bat
+cloudflared.exe
+preview_*
+verified_*
+page_*
+edge_test_*
+face_test_*
+face_*
+blender_*
+upgraded_*

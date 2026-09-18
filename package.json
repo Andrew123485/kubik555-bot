@@ -1,0 +1,12 @@
+{
+  "name": "kubik555-bot",
+  "version": "1.0.0",
+  "description": "3D Dice Oracle & Decision Analytics Telegram Bot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
