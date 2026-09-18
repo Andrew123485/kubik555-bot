@@ -1115,6 +1115,15 @@ pollUpdates();
 if (isCloud) {
   console.log(`☁️ Running in Cloud Mode! Public URL: ${publicUrl}`);
   updateMenuButton(publicUrl);
+
+  // Self-keepalive: prevent Render from spinning down on free tier
+  if (publicUrl && publicUrl.startsWith('https://')) {
+    setInterval(() => {
+      try {
+        https.get(publicUrl, (res) => {}).on('error', () => {});
+      } catch (e) {}
+    }, 12 * 60 * 1000);
+  }
 } else {
   startTunnel();
 }
