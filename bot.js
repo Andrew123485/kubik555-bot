@@ -325,8 +325,8 @@ const server = http.createServer((req, res) => {
       const etag = `"${crypto.createHash('md5').update(data).digest('hex').substring(0, 16)}"`;
       res.setHeader('ETag', etag);
 
-      if (ext === '.html') {
-        res.setHeader('Cache-Control', 'no-cache');
+      if (ext === '.html' || cleanPath === 'sw.js' || cleanPath === 'manifest.json') {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       } else {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
