@@ -183,6 +183,7 @@ const server = http.createServer((req, res) => {
         incoming.forEach(item => {
           if (!item || !item.id) return;
           if (deletedIds.includes(item.id)) return; // Skip if deleted!
+          if (String(item.id).endsWith('00000')) return; // Skip legacy generated test IDs!
 
           item.chatId = userId;
           if (!item.diceValue && item.diceNumber) item.diceValue = item.diceNumber;

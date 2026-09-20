@@ -1965,6 +1965,29 @@
       } catch (e) {}
     }
 
+    function sanitizeRecords(arr) {
+      if (!Array.isArray(arr)) return [];
+      const seenIds = new Set();
+      const clean = [];
+
+      for (const r of arr) {
+        if (!r || !r.id) continue;
+        // Purge any temporary script-generated test IDs ending in 00000
+        if (String(r.id).endsWith('00000')) {
+          deletedIds.add(r.id);
+          continue;
+        }
+        if (deletedIds.has(r.id)) continue;
+        if (seenIds.has(r.id)) continue;
+        seenIds.add(r.id);
+        clean.push(r);
+      }
+
+      saveDeletedIds();
+      clean.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return clean;
+    }
+
     function loadRecordsSafely() {
       const map = new Map();
       try {
@@ -1973,7 +1996,7 @@
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed)) {
             parsed.forEach(r => {
-              if (r && r.id && !deletedIds.has(r.id)) map.set(r.id, r);
+              if (r && r.id && !deletedIds.has(r.id) && !String(r.id).endsWith('00000')) map.set(r.id, r);
             });
           }
         } else if (currentUserId === '576401462') {
@@ -1983,7 +2006,7 @@
             const parsed = JSON.parse(oldRaw);
             if (Array.isArray(parsed)) {
               parsed.forEach(r => {
-                if (r && r.id && !deletedIds.has(r.id)) {
+                if (r && r.id && !deletedIds.has(r.id) && !String(r.id).endsWith('00000')) {
                   r.chatId = '576401462';
                   map.set(r.id, r);
                 }
@@ -1993,9 +2016,7 @@
         }
       } catch (e) {}
 
-      const res = Array.from(map.values()).filter(r => !deletedIds.has(r.id));
-      res.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      return res;
+      return sanitizeRecords(Array.from(map.values()));
     }
 
     records = loadRecordsSafely();
@@ -2017,17 +2038,16 @@
           if (data && data.ok && Array.isArray(data.records)) {
             const map = new Map();
             data.records.forEach(item => {
-              if (item && item.id && !deletedIds.has(item.id)) {
+              if (item && item.id && !deletedIds.has(item.id) && !String(item.id).endsWith('00000')) {
                 map.set(item.id, item);
               }
             });
             records.forEach(localItem => {
-              if (localItem && localItem.id && !deletedIds.has(localItem.id)) {
+              if (localItem && localItem.id && !deletedIds.has(localItem.id) && !String(localItem.id).endsWith('00000')) {
                 if (!map.has(localItem.id)) map.set(localItem.id, localItem);
               }
             });
-            records = Array.from(map.values()).filter(r => !deletedIds.has(r.id));
-            records.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+            records = sanitizeRecords(Array.from(map.values()));
             persist();
             renderHistory();
             renderAnalytics();
