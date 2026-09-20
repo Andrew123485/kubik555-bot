@@ -55,14 +55,14 @@ function escapeHtml(str) {
 }
 
 const PORT = process.env.PORT || 3000;
-let publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || 'https://8732863bf72e58.lhr.life';
+let publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || 'https://kubik555-bot.onrender.com';
 const isCloud = !!(process.env.RENDER || process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || (process.env.PORT && process.env.PORT !== '3000'));
 
 const URL_FILE = path.join(__dirname, 'tunnel_url.txt');
 try {
   if (fs.existsSync(URL_FILE)) {
     const u = fs.readFileSync(URL_FILE, 'utf8').trim();
-    if (u.startsWith('http') && !isCloud) publicUrl = u;
+    if (u.startsWith('http') && !u.includes('.lhr.life') && !isCloud) publicUrl = u;
   }
 } catch (e) {}
 
@@ -99,9 +99,11 @@ function startTunnel() {
         } catch (e) {}
         console.log('\n======================================================');
         console.log('📱 МОБИЛЬНАЯ ССЫЛКА НА 3D КУБИК:');
-        console.log(`👉 ${publicUrl}`);
         console.log('======================================================\n');
-        updateMenuButton(publicUrl);
+        // Never overwrite stable cloud menu button with temporary localhost.run tunnel
+        if (!isCloud) {
+          // keep menu button pointing to https://kubik555-bot.onrender.com
+        }
       }
     };
 
