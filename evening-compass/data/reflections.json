@@ -1,0 +1,60 @@
+[
+  {
+    "rawTranscript": "Сегодня удержался от поспешного входа в шорт, соблюдал дисциплину. В Альфе закрыл сложный кусок BRD. Сдержал злость на созвоне, поступил честно. Завтра строго в DDX зал и спать вовремя.",
+    "pillars": {
+      "curbedHabit": "Сегодня удержался от поспешного входа в шорт, соблюдал дисциплину. Сдержал злость на созвоне, поступил честно",
+      "betterToday": "В Альфе закрыл сложный кусок BRD",
+      "fairnessStatus": "clean",
+      "fairnessLabel": "⚖️ Чист перед собой и людьми",
+      "fairnessNotes": "⚖️ Чист перед собой и людьми",
+      "nextStep": "Завтра строго в DDX зал и спать вовремя"
+    },
+    "patterns": [
+      {
+        "id": "habit_alfa_work",
+        "name": "Альфа-Банк / Документация (BRD/CJM)",
+        "icon": "📑",
+        "category": "Карьера & Проекты",
+        "relevance": 3
+      },
+      {
+        "id": "habit_sport_gym",
+        "name": "Зал / Силовые (DDX)",
+        "icon": "🏋️",
+        "category": "Тело & Энергия",
+        "relevance": 2
+      },
+      {
+        "id": "habit_trading_discipline",
+        "name": "Трейдинг без тильта и FOMO",
+        "icon": "🛡️",
+        "category": "Дисциплина",
+        "relevance": 2
+      },
+      {
+        "id": "habit_anger_control",
+        "name": "Контроль гнева / Эмоциональное равновесие",
+        "icon": "🧘",
+        "category": "Дисциплина",
+        "relevance": 2
+      },
+      {
+        "id": "habit_sleep_hygiene",
+        "name": "Сон вовремя (до 00:00)",
+        "icon": "⏰",
+        "category": "Дисциплина",
+        "relevance": 1
+      }
+    ],
+    "tags": [
+      "habit_alfa_work",
+      "habit_sport_gym",
+      "habit_trading_discipline",
+      "habit_anger_control",
+      "habit_sleep_hygiene"
+    ],
+    "createdAt": "2026-09-20T21:02:27.179Z",
+    "userId": 576401462,
+    "id": "refl_1789938147180_3825y"
+  }
+]

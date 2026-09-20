@@ -10,6 +10,19 @@ const crypto = require('crypto');
 process.on('uncaughtException', err => console.error('[FATAL UNCAUGHT EXCEPTION]:', err));
 process.on('unhandledRejection', err => console.error('[UNHANDLED REJECTION]:', err));
 
+// Seneca Evening Compass Bot & Storage
+let senecaBot = null;
+let senecaDb = null;
+let senecaNlp = null;
+try {
+  senecaBot = require('./evening-compass/bot.js');
+  senecaDb = require('./evening-compass/db.js');
+  senecaNlp = require('./evening-compass/nlp-parser.js');
+  console.log('🏛️ Seneca Evening Compass modules loaded successfully.');
+} catch (e) {
+  console.warn('[Seneca Load Warning]:', e.message);
+}
+
 const BOT_TOKEN = '8914875997:AAGuUI99UFJv9SWbUWyXOMvTbhUBEc7tDj8';
 const API_BASE = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const DB_FILE = path.join(__dirname, 'telegram_dice_history.json');
@@ -295,6 +308,98 @@ const server = http.createServer((req, res) => {
       } catch (e) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'invalid json' }));
+      }
+    });
+    return;
+  }
+
+  // ----------------------------------------------------
+  // SENECA COMPASS ROUTES (Cyber-Stoic 2.0 Reflection)
+  // ----------------------------------------------------
+  if (pathname === '/compass' || pathname === '/compass/') {
+    const compassHtmlPath = path.join(__dirname, 'evening-compass', 'index.html');
+    fs.readFile(compassHtmlPath, (err, data) => {
+      if (err) {
+        res.writeHead(500);
+        res.end('Error loading compass html');
+      } else {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.end(data);
+      }
+    });
+    return;
+  }
+
+  // Seneca API: Stats
+  if ((pathname === '/api/compass/stats' || pathname === '/api/compass') && req.method === 'GET') {
+    if (senecaDb) {
+      const u = queryUser || 'default';
+      const stats = senecaDb.getUserStats(u);
+      const historyList = senecaDb.getReflections(u);
+      const lastReflection = historyList[0] || null;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ stats, history: historyList, lastReflection }));
+    } else {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ stats: { currentStreak: 0, bestStreak: 0, totalDays: 0, tags: {} }, history: [] }));
+    }
+    return;
+  }
+
+  // Seneca API: Checkin
+  if (pathname === '/api/compass/checkin' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const u = payload.userId || queryUser || 'default';
+        if (senecaDb && senecaNlp) {
+          const entry = {
+            userId: u,
+            pillars: payload.pillars || {},
+            tags: senecaNlp.matchArchetype(JSON.stringify(payload.pillars || {})).map(x => x.id),
+            createdAt: new Date().toISOString()
+          };
+          const saved = senecaDb.addReflection(entry);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, saved }));
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        }
+      } catch (e) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'invalid json' }));
+      }
+    });
+    return;
+  }
+
+  // Seneca Static Assets under /compass/...
+  if (pathname.startsWith('/compass/')) {
+    const rel = pathname.replace(/^\/compass\//, '');
+    const compassFile = path.join(__dirname, 'evening-compass', rel);
+    fs.readFile(compassFile, (err, data) => {
+      if (err) {
+        fs.readFile(path.join(__dirname, 'evening-compass', 'index.html'), (e2, d2) => {
+          if (e2) { res.writeHead(404); res.end('Not found'); }
+          else { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(d2); }
+        });
+      } else {
+        const ext = path.extname(compassFile).toLowerCase();
+        const mimeMap = {
+          '.html': 'text/html; charset=utf-8',
+          '.js': 'application/javascript; charset=utf-8',
+          '.json': 'application/json; charset=utf-8',
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.svg': 'image/svg+xml',
+          '.css': 'text/css; charset=utf-8'
+        };
+        res.writeHead(200, { 'Content-Type': mimeMap[ext] || 'application/octet-stream' });
+        res.end(data);
       }
     });
     return;
@@ -1115,17 +1220,29 @@ async function sendAiExport(chatId) {
 // Launch
 console.log(`🤖 Telegram Bot @kubik555bot resilient runner started... (Port: ${PORT}, Cloud: ${isCloud})`);
 pollUpdates();
+
+const compassPublicUrl = 'https://kubik555-bot.onrender.com/compass';
+if (senecaBot && senecaBot.initSenecaCloud) {
+  try {
+    senecaBot.initSenecaCloud(compassPublicUrl);
+  } catch (err) {
+    console.error('[SENECA CLOUD LAUNCH ERROR]:', err);
+  }
+}
+
 if (isCloud) {
   console.log(`☁️ Running in Cloud Mode! Public URL: ${publicUrl}`);
   updateMenuButton(publicUrl);
 
-  // Self-keepalive: prevent Render from spinning down on free tier
+  // Self-keepalive: prevent Render from spinning down on free tier (Render timeout is 15m)
   if (publicUrl && publicUrl.startsWith('https://')) {
     setInterval(() => {
       try {
         https.get(publicUrl, (res) => {}).on('error', () => {});
+        https.get(compassPublicUrl, (res) => {}).on('error', () => {});
+        console.log(`[KEEPALIVE] Sent keepalive ping to Render at ${new Date().toLocaleTimeString('ru-RU')}`);
       } catch (e) {}
-    }, 12 * 60 * 1000);
+    }, 9 * 60 * 1000); // Every 9 minutes
   }
 } else {
   startTunnel();

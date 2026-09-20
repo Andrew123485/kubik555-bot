@@ -1,0 +1,19 @@
+{
+  "name": "evening-compass-bot",
+  "version": "1.0.0",
+  "description": "Голосовой бот и Cyber-Stoic Mini App для вечерней стоической рефлексии и отслеживания привычек",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "keywords": [
+    "telegram-bot",
+    "voice-reflection",
+    "stoicism",
+    "habits",
+    "deepgram",
+    "mini-app"
+  ],
+  "author": "Andrey",
+  "license": "MIT"
+}

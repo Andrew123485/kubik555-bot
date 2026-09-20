@@ -19,3 +19,8 @@ upgraded_*
 kubik-deploy.zip
 dice.glb
 free_hq__pbr_game_model_metallic_sapphire_dice.glb
+*.oga
+*.wav
+*.mp3
+.env
+evening-compass/.env
