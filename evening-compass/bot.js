@@ -31,7 +31,7 @@ const nlp = require('./nlp-parser');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8946046089:AAETwViZ7-F69BGt03yZdOcV7BqzomhOAsQ';
 const PORT = process.env.PORT || 3001;
-let publicUrl = process.env.PUBLIC_URL || '';
+let publicUrl = process.env.PUBLIC_URL || 'https://kubik555-bot.onrender.com/compass';
 
 const API_BASE = BOT_TOKEN ? `https://api.telegram.org/bot${BOT_TOKEN}` : null;
 
@@ -365,9 +365,57 @@ async function pollUpdates() {
   setImmediate(pollUpdates);
 }
 
-// SSH Tunnel for instant HTTPS mobile access
+// High-speed tunnel for instant HTTPS mobile access (Cloudflare Quick Tunnel with SSH fallback)
 let tunnelProcess = null;
 function startMobileTunnel() {
+  const cloudflaredPath = path.join(__dirname, '..', 'cloudflared.exe');
+  if (fs.existsSync(cloudflaredPath)) {
+    try {
+      console.log('🔗 [Tunnel] Starting Cloudflare Quick Tunnel for port ' + PORT + '...');
+      const cf = spawn(cloudflaredPath, ['tunnel', '--url', `http://localhost:${PORT}`]);
+      
+      const onData = (data) => {
+        const str = data.toString();
+        const match = str.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/i);
+        if (match) {
+          publicUrl = match[0];
+          console.log(`\n======================================================`);
+          console.log(`🌐 МОБИЛЬНЫЙ HTTPS URL ДЛЯ MINI APP (Cloudflare):`);
+          console.log(`👉 ${publicUrl}`);
+          console.log(`======================================================\n`);
+
+          // Keep Telegram Menu Button pointing to stable Render HTTPS domain
+          tgRequest('setChatMenuButton', {
+            menu_button: {
+              type: 'web_app',
+              text: 'Компас',
+              web_app: { url: 'https://kubik555-bot.onrender.com/compass' }
+            }
+          }).catch(() => {});
+        }
+      };
+
+      cf.stdout.on('data', onData);
+      cf.stderr.on('data', onData);
+
+      cf.on('close', () => {
+        tunnelProcess = null;
+        setTimeout(startMobileTunnel, 5000);
+      });
+
+      cf.on('error', (err) => {
+        console.warn('[Cloudflared Error]:', err.message);
+        tunnelProcess = null;
+      });
+
+      tunnelProcess = cf;
+      return;
+    } catch (e) {
+      console.warn('[Cloudflared Spawn Exception]:', e.message);
+    }
+  }
+
+  // Fallback to localhost.run SSH tunnel if cloudflared is not present
   try {
     console.log('🔗 [Tunnel] Starting localhost.run SSH tunnel for port 3001...');
     const args = [
@@ -392,6 +440,13 @@ function startMobileTunnel() {
         console.log(`\n======================================================`);
         console.log(`🌐 МОБИЛЬНЫЙ HTTPS URL ДЛЯ MINI APP: ${publicUrl}`);
         console.log(`======================================================\n`);
+        tgRequest('setChatMenuButton', {
+          menu_button: {
+            type: 'web_app',
+            text: 'Компас',
+            web_app: { url: publicUrl }
+          }
+        }).catch(() => {});
       }
     });
 
