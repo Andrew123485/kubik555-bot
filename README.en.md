@@ -47,21 +47,21 @@
 
 ---
 
-## 2. 📸 Visual Gallery & 3D Detailing
+## 2. 📸 Visual Gallery: Production UI & 3D Detailing
 
 <div align="center">
 
-| Precision 3D CAD Mesh (Blender) | Six Custom Engraved Faces |
-|:---:|:---:|
-| <img src="docs/images/dice_cad_model.png" alt="Blender CAD Model" width="460"/> | <img src="docs/images/dice_six_faces.jpg" alt="Six Faces Typography" width="460"/> |
+### 🎲 "Decision" 3D Scene & Sapphire Dice CAD Render
 
-| "Moon Lagoon" Water Shader Scene | Telegram Mini App UI |
+| 3D Decision Scene: Dice on Moon Lagoon | 3D CAD Detailing: Dark Metallic Sapphire Dice |
 |:---:|:---:|
-| <img src="docs/images/dice_moon_lagoon.png" alt="Moon Lagoon Water Shader" width="460"/> | <img src="docs/images/dice_webapp_ui.png" alt="Telegram Mini App UI" width="460"/> |
+| <img src="docs/images/dice_tab_decision.png" alt="Decision Tab 3D Scene" width="460"/> | <img src="docs/images/dice_sapphire_render.png" alt="Sapphire Dice 3D Render" width="460"/> |
 
-| 360° Turnaround 3D Perspective |
-|:---:|
-| <img src="docs/images/dice_turnaround_view.jpg" alt="Turnaround 3D view" width="850"/> |
+### 📊 "Analytics" Engine & 📜 "Chronicle" History
+
+| "Analytics" Tab: Donut Charts, Ratios & Metrics | "Chronicle" Tab: Decision Cards, Outcomes & AI Export |
+|:---:|:---:|
+| <img src="docs/images/dice_tab_analytics.png" alt="Analytics Tab Charts" width="460"/> | <img src="docs/images/dice_tab_history.png" alt="History Chronicle Tab" width="460"/> |
 
 </div>
 

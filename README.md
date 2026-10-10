@@ -47,21 +47,21 @@
 
 ---
 
-## 2. 📸 Визуальная галерея и 3D-детализация
+## 2. 📸 Визуальная галерея: Реальный интерфейс и 3D-детализация
 
 <div align="center">
 
-| Высокоточная 3D-модель (Blender CAD) | Все 6 авторских граней кубика |
-|:---:|:---:|
-| <img src="docs/images/dice_cad_model.png" alt="Blender CAD Model" width="460"/> | <img src="docs/images/dice_six_faces.jpg" alt="Six Faces Typography" width="460"/> |
+### 🎲 Экран «Жребий» и 3D-детализация сапфирового кубика
 
-| Интерактивная сцена «Лунная лагуна» | Интерфейс Telegram Mini App |
+| Главная 3D-сцена «Жребий»: кубик в ночной лагуне | Детализация 3D-модели: темный сапфировый кубик |
 |:---:|:---:|
-| <img src="docs/images/dice_moon_lagoon.png" alt="Moon Lagoon Water Shader" width="460"/> | <img src="docs/images/dice_webapp_ui.png" alt="Telegram Mini App UI" width="460"/> |
+| <img src="docs/images/dice_tab_decision.png" alt="Decision Tab 3D Scene" width="460"/> | <img src="docs/images/dice_sapphire_render.png" alt="Sapphire Dice 3D Render" width="460"/> |
 
-| 360° Круговой обзор 3D-модели (Turnaround) |
-|:---:|
-| <img src="docs/images/dice_turnaround_view.jpg" alt="Turnaround 3D view" width="850"/> |
+### 📊 Экран «Аналитика» и 📜 Экран «Летопись»
+
+| Вкладка «Аналитика»: баланс вердиктов, исходы и диаграммы | Вкладка «Летопись»: история решений, теги и разбор с ИИ |
+|:---:|:---:|
+| <img src="docs/images/dice_tab_analytics.png" alt="Analytics Tab Charts" width="460"/> | <img src="docs/images/dice_tab_history.png" alt="History Chronicle Tab" width="460"/> |
 
 </div>
 
