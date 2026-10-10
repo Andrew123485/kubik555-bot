@@ -24,3 +24,6 @@ free_hq__pbr_game_model_metallic_sapphire_dice.glb
 *.mp3
 .env
 evening-compass/.env
+
+# Whitelist documentation images
+!docs/images/*

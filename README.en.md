@@ -53,15 +53,15 @@
 
 | Precision 3D CAD Mesh (Blender) | Six Custom Engraved Faces |
 |:---:|:---:|
-| <img src="docs/images/blender_dice_preview.png" alt="Blender CAD Model" width="460"/> | <img src="docs/images/preview_six_faces.jpg" alt="Six Faces Typography" width="460"/> |
+| <img src="docs/images/dice_cad_model.png" alt="Blender CAD Model" width="460"/> | <img src="docs/images/dice_six_faces.jpg" alt="Six Faces Typography" width="460"/> |
 
 | "Moon Lagoon" Water Shader Scene | Telegram Mini App UI |
 |:---:|:---:|
-| <img src="docs/images/verified_dice_main.png" alt="Moon Lagoon Water Shader" width="460"/> | <img src="docs/images/page_screenshot.png" alt="Telegram Mini App UI" width="460"/> |
+| <img src="docs/images/dice_moon_lagoon.png" alt="Moon Lagoon Water Shader" width="460"/> | <img src="docs/images/dice_webapp_ui.png" alt="Telegram Mini App UI" width="460"/> |
 
 | 360° Turnaround 3D Perspective |
 |:---:|
-| <img src="docs/images/preview_turnaround.jpg" alt="Turnaround 3D view" width="850"/> |
+| <img src="docs/images/dice_turnaround_view.jpg" alt="Turnaround 3D view" width="850"/> |
 
 </div>
 
