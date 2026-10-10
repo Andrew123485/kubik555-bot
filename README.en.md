@@ -21,17 +21,18 @@
 1. [Project Overview](#1-project-overview)
    * [1.1. Concept](#11-concept)
    * [1.2. Engineering Challenges](#12-engineering-challenges)
-2. [Key Features & Physics Modeling](#2-key-features--physics-modeling)
-   * [2.1. 3D Rigid-Body Dice Physics (Three.js)](#21-3d-rigid-body-dice-physics-threejs)
-   * [2.2. Fluid Dynamics & Centrifugal Spray Particles](#22-fluid-dynamics--centrifugal-spray-particles)
-   * [2.3. Procedural Blender 3D CAD Generation](#23-procedural-blender-3d-cad-generation)
-   * [2.4. Telegram Mini App & 24/7 Cloud Daemon](#24-telegram-mini-app--247-cloud-daemon)
-3. [Architecture & Workflow](#3-architecture--workflow)
-   * [3.1. Flowchart](#31-flowchart)
-   * [3.2. File Hierarchy](#32-file-hierarchy)
-4. [Technology Stack](#4-technology-stack)
-5. [Installation & Local Setup](#5-installation--local-setup)
-6. [Author & Contacts](#6-author--contacts)
+2. [Visual Gallery & 3D Detailing](#2-visual-gallery--3d-detailing)
+3. [Key Features & Physics Modeling](#3-key-features--physics-modeling)
+   * [3.1. 3D Rigid-Body Dice Physics (Three.js)](#31-3d-rigid-body-dice-physics-threejs)
+   * [3.2. Fluid Dynamics & Centrifugal Spray Particles](#32-fluid-dynamics--centrifugal-spray-particles)
+   * [3.3. Procedural Blender 3D CAD Generation](#33-procedural-blender-3d-cad-generation)
+   * [3.4. Telegram Mini App & 24/7 Cloud Daemon](#34-telegram-mini-app--247-cloud-daemon)
+4. [Architecture & Workflow](#4-architecture--workflow)
+   * [4.1. Flowchart](#41-flowchart)
+   * [4.2. File Hierarchy](#42-file-hierarchy)
+5. [Technology Stack](#5-technology-stack)
+6. [Installation & Local Setup](#6-installation--local-setup)
+7. [Author & Contacts](#7-author--contacts)
 
 ---
 
@@ -46,7 +47,27 @@
 
 ---
 
-## 2. Key Features & Physics Modeling
+## 2. 📸 Visual Gallery & 3D Detailing
+
+<div align="center">
+
+| Precision 3D CAD Mesh (Blender) | Six Custom Engraved Faces |
+|:---:|:---:|
+| <img src="docs/images/blender_dice_preview.png" alt="Blender CAD Model" width="460"/> | <img src="docs/images/preview_six_faces.jpg" alt="Six Faces Typography" width="460"/> |
+
+| "Moon Lagoon" Water Shader Scene | Telegram Mini App UI |
+|:---:|:---:|
+| <img src="docs/images/verified_dice_main.png" alt="Moon Lagoon Water Shader" width="460"/> | <img src="docs/images/page_screenshot.png" alt="Telegram Mini App UI" width="460"/> |
+
+| 360° Turnaround 3D Perspective |
+|:---:|
+| <img src="docs/images/preview_turnaround.jpg" alt="Turnaround 3D view" width="850"/> |
+
+</div>
+
+---
+
+## 3. Key Features & Physics Modeling
 
 ### 2.1. 3D Rigid-Body Dice Physics (Three.js)
 * Velocity integration accounting for gravity, angular friction damping, and elastic collision coefficients.
