@@ -85,8 +85,8 @@
   * PBR-текстурирование (Metallic Sapphire roughness/normal maps);
   * Экспорт в бинарный формат `dice.glb` с минимальным размером.
 
-### 2.4. Интеграция с Telegram Mini App и 24/7 Cloud Daemon
-* Серверный демон `bot.js` на Node.js обрабатывает взаимодействие с Telegram Bot API;
+### 2.4. Интеграция с Telegram Mini App и фоновый облачный сервис 24/7 (Cloud Service)
+* Серверный сервис `bot.js` на Node.js обрабатывает взаимодействие с Telegram Bot API;
 * Поддержка непрерывного аптайма 24/7 на облачных PaaS (Render.com) через фоновый пинг-механизм (Keepalive).
 
 ---
@@ -107,7 +107,7 @@ flowchart TD
     end
     
     subgraph Backend["Серверный контур"]
-        Client <-->|API / Haptic Feedback| BotDaemon[⚡ Node.js bot.js]
+        Client <-->|API / Haptic Feedback| BotDaemon[⚡ Node.js bot.js Background Service]
         BotDaemon --> RenderPaaS[☁️ 24/7 Keepalive Service]
     end
     

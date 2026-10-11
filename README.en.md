@@ -85,8 +85,8 @@
   * PBR surface tuning (Metallic Sapphire roughness and normal maps);
   * Optimized binary `dice.glb` asset export.
 
-### 2.4. Telegram Mini App & 24/7 Cloud Daemon
-* Node.js server daemon (`bot.js`) interfacing with the Telegram Bot API;
+### 2.4. Telegram Mini App Integration & 24/7 Cloud Background Service
+* Node.js backend service (`bot.js`) interfacing with the Telegram Bot API;
 * Continuous 24/7 uptime monitoring protocol tailored for PaaS (Render.com).
 
 ---
